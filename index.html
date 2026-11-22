@@ -35,9 +35,10 @@
   <meta name="twitter:description" content="Estúdio de marcação de palco (stage blocking) e formações para sapateado em 2D e 3D com timeline híbrida, contagem em Oitos, metrônomo e áudio." />
   <meta name="twitter:image" content="https://stagetap-cue.web.app/icons/og-cover.jpg" />
 
-  <!-- Three.js + OrbitControls -->
+  <!-- Three.js + OrbitControls + MP4 Muxer (H.264/AAC FastStart compatível com WhatsApp) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="./mp4-muxer.min.js"></script>
 
   <style>
     :root {
@@ -1464,8 +1465,9 @@
     let audioObjectUrl = null;
     let waveformPeaks = [];
 
-    // Estado de Exportação de Vídeo (Tela Cheia da Visualização Atual)
+    // Estado de Exportação de Vídeo (MP4 H.264 + AAC FastStart compatível com WhatsApp, inclusive ao parar no meio)
     let isExportingVideo = false;
+    let isFinalizingVideo = false;
     let cancelVideoExportFlag = false;
     let wasStageMaximizedBeforeExport = false;
     let videoExportCanvas = null;
@@ -1474,6 +1476,14 @@
     let videoRecordedChunks = [];
     let videoExportAudioDest = null;
     let videoExportBufferSource = null;
+    let mp4MuxerInstance = null;
+    let webCodecsVideoEncoder = null;
+    let webCodecsAudioEncoder = null;
+    let webCodecsUseAudio = false;
+    let exportStartWallTime = 0;
+    let exportStartTimelineSec = 0;
+    let exportEncodedFrameCount = 0;
+    let exportMetronomeClicks = [];
 
     function ensureAudioCtx() {
       if (!audioCtx) {
@@ -1502,6 +1512,12 @@
 
     function playTapClick(beatInEight) {
       if (!metronomeEnabled || metronomeVolume <= 0.001) return;
+      if (isExportingVideo) {
+        exportMetronomeClicks.push({
+          relSec: Math.max(0, (performance.now() - exportStartWallTime) / 1000),
+          beatInEight
+        });
+      }
       ensureAudioCtx();
       if (!audioCtx) return;
       const now = audioCtx.currentTime;
@@ -5411,7 +5427,7 @@
     }
 
     // =========================================================================
-    // 9. EXPORTAÇÃO DE VÍDEO EM TELA CHEIA (COM A VISUALIZAÇÃO ATUAL 2D OU 3D)
+    // 9. EXPORTAÇÃO DE VÍDEO MP4 (H.264 + AAC FASTSTART 100% COMPATÍVEL COM WHATSAPP)
     // =========================================================================
     function getSupportedVideoMimeType() {
       const candidates = [
@@ -5429,11 +5445,82 @@
       return '';
     }
 
-    function startVideoExport() {
+    // Sintetiza o áudio estéreo (44100 Hz) exato do trecho gravado (música + metrônomo) e codifica em AAC (mp4a.40.2)
+    async function encodeRecordedAudioToMuxer(recordedDurSec) {
+      if (!webCodecsAudioEncoder || !webCodecsUseAudio) return;
+      const sr = 44100;
+      const totalFrames = Math.max(1024, Math.floor(recordedDurSec * sr));
+      const leftCh = new Float32Array(totalFrames);
+      const rightCh = new Float32Array(totalFrames);
+
+      // 1. Copia e reamostra o trecho correspondente da música (audioBuffer) respeitando offset, velocidade e volume
+      if (audioBuffer && audioVolume > 0.001) {
+        const srcSr = audioBuffer.sampleRate;
+        const srcL = audioBuffer.getChannelData(0);
+        const srcR = audioBuffer.numberOfChannels > 1 ? audioBuffer.getChannelData(1) : srcL;
+        const srcLen = srcL.length;
+        const baseAudioSec = exportStartTimelineSec + Number(project.audioOffset || 0);
+
+        for (let i = 0; i < totalFrames; i++) {
+          const tAudio = baseAudioSec + (i / sr) * playbackSpeed;
+          if (tAudio < 0) continue;
+          const exactIdx = tAudio * srcSr;
+          const idx0 = Math.floor(exactIdx);
+          if (idx0 >= srcLen) break;
+          const frac = exactIdx - idx0;
+          const idx1 = Math.min(srcLen - 1, idx0 + 1);
+          leftCh[i] = (srcL[idx0] * (1 - frac) + srcL[idx1] * frac) * audioVolume;
+          rightCh[i] = (srcR[idx0] * (1 - frac) + srcR[idx1] * frac) * audioVolume;
+        }
+      }
+
+      // 2. Mistura os cliques do metrônomo que ocorreram durante a gravação
+      if (metronomeEnabled && metronomeVolume > 0.001 && exportMetronomeClicks.length > 0) {
+        const clickDurSamples = Math.floor(0.065 * sr);
+        exportMetronomeClicks.forEach((clk) => {
+          const startSample = Math.floor(clk.relSec * sr);
+          const freq = clk.beatInEight === 1 ? 1040 : (clk.beatInEight === 5 ? 780 : 620);
+          const peak = (clk.beatInEight === 1 ? 0.35 : 0.20) * metronomeVolume;
+          for (let j = 0; j < clickDurSamples; j++) {
+            const idx = startSample + j;
+            if (idx >= totalFrames) break;
+            const tClk = j / sr;
+            const env = peak * Math.exp(-tClk * 55);
+            const sampleVal = Math.sin(2 * Math.PI * freq * tClk) * env;
+            leftCh[idx] = Math.max(-1, Math.min(1, leftCh[idx] + sampleVal));
+            rightCh[idx] = Math.max(-1, Math.min(1, rightCh[idx] + sampleVal));
+          }
+        });
+      }
+
+      // 3. Envia blocos de 1024 samples no formato f32-planar para o AudioEncoder AAC
+      const chunkFrames = 1024;
+      for (let offset = 0; offset < totalFrames; offset += chunkFrames) {
+        const nFrames = Math.min(chunkFrames, totalFrames - offset);
+        const planar = new Float32Array(nFrames * 2);
+        planar.set(leftCh.subarray(offset, offset + nFrames), 0);
+        planar.set(rightCh.subarray(offset, offset + nFrames), nFrames);
+        const tsUs = Math.round((offset / sr) * 1e6);
+        const ad = new AudioData({
+          format: 'f32-planar',
+          sampleRate: sr,
+          numberOfFrames: nFrames,
+          numberOfChannels: 2,
+          timestamp: tsUs,
+          data: planar
+        });
+        webCodecsAudioEncoder.encode(ad);
+        ad.close();
+      }
+      await webCodecsAudioEncoder.flush();
+    }
+
+    async function startVideoExport() {
       if (isExportingVideo) {
         stopVideoExport(true);
         return;
       }
+      if (isFinalizingVideo) return;
       ensureAudioCtx();
       setEditing3DDancer(null);
 
@@ -5445,24 +5532,133 @@
       wasStageMaximizedBeforeExport = document.body.classList.contains('stage-maximized');
       document.body.classList.add('stage-maximized');
 
-      // Força atualização das dimensões do canvas 2D ou 3D para a tela cheia
       if (viewMode === '2d') drawStage2D();
       else updateAndRender3D();
 
-      const srcCanvas = viewMode === '2d' ? canvas2d : (renderer3d ? renderer3d.domElement : canvas2d);
-      const targetW = Math.max(1280, Math.min(1920, srcCanvas.width || 1280));
-      const aspect = (srcCanvas.width && srcCanvas.height) ? (srcCanvas.width / srcCanvas.height) : (16 / 9);
-      const targetH = Math.round(targetW / aspect / 2) * 2;
+      // Resolução 1280x720 (HD 16:9 com dimensões pares exigidas pelo H.264 do WhatsApp)
+      const targetW = 1280;
+      const targetH = 720;
 
       videoExportCanvas = document.createElement('canvas');
       videoExportCanvas.width = targetW;
       videoExportCanvas.height = targetH;
       videoExportCtx = videoExportCanvas.getContext('2d');
 
+      exportStartWallTime = performance.now();
+      exportStartTimelineSec = currentTime;
+      exportEncodedFrameCount = 0;
+      exportMetronomeClicks = [];
+      cancelVideoExportFlag = false;
+      mp4MuxerInstance = null;
+      webCodecsVideoEncoder = null;
+      webCodecsAudioEncoder = null;
+      webCodecsUseAudio = false;
+
+      // Tenta usar WebCodecs + Mp4Muxer (gera MP4 H.264 Baseline + AAC com cabeçalho moov FastStart 100% compatível com WhatsApp,
+      // inclusive quando o usuário clica em "Finalizar e Salvar" no meio da gravação!)
+      let chosenAvcCodec = null;
+      if (window.Mp4Muxer && window.VideoEncoder && window.VideoFrame) {
+        const avcCandidates = [
+          'avc1.42001f', // H.264 Baseline Profile Level 3.1 (Padrão universal do WhatsApp)
+          'avc1.42E01F', // H.264 Constrained Baseline Level 3.1
+          'avc1.4D401F', // H.264 Main Profile Level 3.1
+          'avc1.64001F'  // H.264 High Profile Level 3.1
+        ];
+        for (const c of avcCandidates) {
+          try {
+            const sup = await VideoEncoder.isConfigSupported({
+              codec: c,
+              width: targetW,
+              height: targetH,
+              bitrate: 4000000,
+              framerate: 30,
+              avc: { format: 'avc' }
+            });
+            if (sup && sup.supported) {
+              chosenAvcCodec = c;
+              break;
+            }
+          } catch (e) {}
+        }
+      }
+
+      if (chosenAvcCodec) {
+        if (window.AudioEncoder && window.AudioData) {
+          try {
+            const aSup = await AudioEncoder.isConfigSupported({
+              codec: 'mp4a.40.2',
+              sampleRate: 44100,
+              numberOfChannels: 2,
+              bitrate: 128000
+            });
+            webCodecsUseAudio = Boolean(aSup && aSup.supported);
+          } catch (e) {
+            webCodecsUseAudio = false;
+          }
+        }
+
+        mp4MuxerInstance = new Mp4Muxer.Muxer({
+          target: new Mp4Muxer.ArrayBufferTarget(),
+          video: {
+            codec: 'avc',
+            width: targetW,
+            height: targetH
+          },
+          audio: webCodecsUseAudio ? {
+            codec: 'aac',
+            numberOfChannels: 2,
+            sampleRate: 44100
+          } : undefined,
+          fastStart: 'in-memory',
+          firstTimestampBehavior: 'offset'
+        });
+
+        webCodecsVideoEncoder = new VideoEncoder({
+          output: (chunk, meta) => {
+            if (mp4MuxerInstance) mp4MuxerInstance.addVideoChunk(chunk, meta);
+          },
+          error: (err) => console.error('VideoEncoder error:', err)
+        });
+        webCodecsVideoEncoder.configure({
+          codec: chosenAvcCodec,
+          width: targetW,
+          height: targetH,
+          bitrate: 4000000,
+          framerate: 30,
+          avc: { format: 'avc' }
+        });
+
+        if (webCodecsUseAudio) {
+          webCodecsAudioEncoder = new AudioEncoder({
+            output: (chunk, meta) => {
+              if (mp4MuxerInstance) mp4MuxerInstance.addAudioChunk(chunk, meta);
+            },
+            error: (err) => console.error('AudioEncoder error:', err)
+          });
+          webCodecsAudioEncoder.configure({
+            codec: 'mp4a.40.2',
+            sampleRate: 44100,
+            numberOfChannels: 2,
+            bitrate: 128000
+          });
+        }
+
+        isExportingVideo = true;
+        const floatBar = document.getElementById('videoExportFloatingBar');
+        if (floatBar) floatBar.style.display = 'flex';
+        const topBtn = document.getElementById('btnExportVideo');
+        if (topBtn) topBtn.textContent = '🔴 Gravando MP4...';
+
+        exportStartWallTime = performance.now();
+        renderVideoExportFrame();
+        if (!isPlaying) togglePlay();
+        return;
+      }
+
+      // Fallback para MediaRecorder caso o navegador não possua WebCodecs
       const canvasStream = videoExportCanvas.captureStream(30);
       const combinedTracks = [...canvasStream.getVideoTracks()];
 
-      // Configura captura do áudio (música + metrônomo se ligado) via Web Audio API
       if (audioCtx) {
         videoExportAudioDest = audioCtx.createMediaStreamDestination();
         if (audioBuffer && audioVolume > 0.001) {
@@ -5491,10 +5687,9 @@
 
       const finalStream = new MediaStream(combinedTracks);
       const mimeType = getSupportedVideoMimeType();
-      const recOptions = mimeType ? { mimeType, videoBitsPerSecond: 6000000 } : { videoBitsPerSecond: 6000000 };
+      const recOptions = mimeType ? { mimeType, videoBitsPerSecond: 5000000 } : { videoBitsPerSecond: 5000000 };
 
       videoRecordedChunks = [];
-      cancelVideoExportFlag = false;
       isExportingVideo = true;
 
       try {
@@ -5515,30 +5710,13 @@
           videoExportBufferSource = null;
         }
         videoExportAudioDest = null;
-
-        if (!wasStageMaximizedBeforeExport) {
-          document.body.classList.remove('stage-maximized');
-        }
-        const floatBar = document.getElementById('videoExportFloatingBar');
-        if (floatBar) floatBar.style.display = 'none';
-        const topBtn = document.getElementById('btnExportVideo');
-        if (topBtn) topBtn.textContent = '🎥 Exportar Vídeo';
-
-        setTimeout(() => {
-          if (viewMode === '2d') drawStage2D();
-          else updateAndRender3D();
-        }, 60);
+        restoreUIOnVideoExportEnd();
 
         if (!cancelVideoExportFlag && videoRecordedChunks.length > 0) {
           const actualMime = (videoMediaRecorder && videoMediaRecorder.mimeType) || mimeType || 'video/webm';
           const ext = actualMime.includes('mp4') ? 'mp4' : 'webm';
           const blob = new Blob(videoRecordedChunks, { type: actualMime });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `stagetap-cue-${viewMode}-${new Date().toISOString().slice(0, 10)}.${ext}`;
-          a.click();
-          setTimeout(() => URL.revokeObjectURL(url), 15000);
+          triggerVideoBlobDownload(blob, ext);
         }
       };
 
@@ -5552,11 +5730,66 @@
       if (!isPlaying) togglePlay();
     }
 
-    function stopVideoExport(saveFile = true) {
-      if (!isExportingVideo) return;
+    function restoreUIOnVideoExportEnd() {
+      if (!wasStageMaximizedBeforeExport) {
+        document.body.classList.remove('stage-maximized');
+      }
+      const floatBar = document.getElementById('videoExportFloatingBar');
+      if (floatBar) floatBar.style.display = 'none';
+      const topBtn = document.getElementById('btnExportVideo');
+      if (topBtn) topBtn.textContent = '🎥 Exportar Vídeo';
+
+      setTimeout(() => {
+        if (viewMode === '2d') drawStage2D();
+        else updateAndRender3D();
+      }, 60);
+    }
+
+    function triggerVideoBlobDownload(blob, ext) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `stagetap-cue-${viewMode}-${new Date().toISOString().slice(0, 10)}.${ext}`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 15000);
+    }
+
+    async function stopVideoExport(saveFile = true) {
+      if (!isExportingVideo || isFinalizingVideo) return;
       isExportingVideo = false;
       cancelVideoExportFlag = !saveFile;
       if (isPlaying) togglePlay();
+
+      // Caso esteja gravando com WebCodecs + Mp4Muxer (MP4 H.264 + AAC com cabeçalho moov FastStart p/ WhatsApp)
+      if (mp4MuxerInstance && webCodecsVideoEncoder) {
+        isFinalizingVideo = true;
+        const stEl = document.getElementById('videoExportStatusText');
+        if (stEl) stEl.textContent = '⏳ Finalizando MP4 (WhatsApp)...';
+
+        try {
+          if (saveFile && exportEncodedFrameCount > 0) {
+            const recordedDurSec = Math.max(0.2, exportEncodedFrameCount / 30);
+            await webCodecsVideoEncoder.flush();
+            await encodeRecordedAudioToMuxer(recordedDurSec);
+            mp4MuxerInstance.finalize();
+            const buffer = mp4MuxerInstance.target.buffer;
+            const blob = new Blob([buffer], { type: 'video/mp4' });
+            triggerVideoBlobDownload(blob, 'mp4');
+          }
+        } catch (err) {
+          console.error('Erro ao finalizar MP4:', err);
+        } finally {
+          try { if (webCodecsVideoEncoder.state !== 'closed') webCodecsVideoEncoder.close(); } catch (e) {}
+          try { if (webCodecsAudioEncoder && webCodecsAudioEncoder.state !== 'closed') webCodecsAudioEncoder.close(); } catch (e) {}
+          webCodecsVideoEncoder = null;
+          webCodecsAudioEncoder = null;
+          mp4MuxerInstance = null;
+          isFinalizingVideo = false;
+          restoreUIOnVideoExportEnd();
+        }
+        return;
+      }
+
       if (videoMediaRecorder && videoMediaRecorder.state !== 'inactive') {
         try { videoMediaRecorder.stop(); } catch (e) {}
       }
@@ -5671,11 +5904,29 @@
         g.restore();
       }
 
+      // Codifica quadros de vídeo a 30 FPS constantes no VideoEncoder H.264 (para MP4 compatível com WhatsApp)
+      if (webCodecsVideoEncoder && webCodecsVideoEncoder.state === 'configured') {
+        const elapsedSec = Math.max(0, (performance.now() - exportStartWallTime) / 1000);
+        const targetFrameIdx = Math.floor(elapsedSec * 30);
+        let steps = 0;
+        while (exportEncodedFrameCount <= targetFrameIdx && steps < 3) {
+          const tsUs = Math.round((exportEncodedFrameCount / 30) * 1e6);
+          const durUs = Math.round(1e6 / 30);
+          try {
+            const vf = new VideoFrame(videoExportCanvas, { timestamp: tsUs, duration: durUs });
+            webCodecsVideoEncoder.encode(vf, { keyFrame: (exportEncodedFrameCount % 30 === 0) });
+            vf.close();
+          } catch (e) {}
+          exportEncodedFrameCount++;
+          steps++;
+        }
+      }
+
       // Atualiza o progresso na barra flutuante da tela
       const pct = Math.min(100, Math.round((currentTime / Math.max(1, project.duration)) * 100));
       const stEl = document.getElementById('videoExportStatusText');
       if (stEl) {
-        stEl.textContent = `Exportando Vídeo (${pct}%) — ${fmt(currentTime)} / ${fmt(project.duration)}`;
+        stEl.textContent = `Exportando MP4 (${pct}%) — ${fmt(currentTime)} / ${fmt(project.duration)}`;
       }
     }
 
