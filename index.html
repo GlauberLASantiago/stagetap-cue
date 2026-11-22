@@ -756,7 +756,10 @@
       <div class="section-box" id="dancerInspectorBox">
         <div class="section-title">
           <span>🧭 Dançarino: <strong id="inspDancerName" style="color:var(--accent-amber);">A</strong></span>
-          <button type="button" class="btn" style="padding:2px 6px;font-size:0.68rem;" onclick="resetSelectedDancerCurve()" title="Endireitar trajetória curva">↺ Reta</button>
+          <div style="display:flex;gap:4px;">
+            <button type="button" class="btn btn-amber" style="padding:2px 6px;font-size:0.68rem;" onclick="enterDancerPOV(selectedDancerId)" title="Ver o palco pelos olhos deste dançarino em 3D (Tecla G)">👀 Pelos Olhos</button>
+            <button type="button" class="btn" style="padding:2px 6px;font-size:0.68rem;" onclick="resetSelectedDancerCurve()" title="Endireitar trajetória curva">↺ Reta</button>
+          </div>
         </div>
 
         <label class="field-label">
@@ -832,12 +835,14 @@
 
       <!-- Bottom HUD: Step Banner & 3D Camera Presets -->
       <div class="stage-hud-bottom">
-        <div id="camBar" class="cam-bar">
-          <button type="button" class="chip active" onclick="set3DCamera('audience')">🎭 Plateia (Frontal)</button>
-          <button type="button" class="chip" onclick="set3DCamera('choreo')">🎬 Coreógrafo (Diagonal)</button>
-          <button type="button" class="chip" onclick="set3DCamera('dancer')">🪞 Visão do Bailarino (De Costas)</button>
-          <button type="button" class="chip" onclick="set3DCamera('side')">📐 Lateral (Coxia)</button>
-          <button type="button" class="chip" onclick="set3DCamera('top')">⬆️ Topo 3D</button>
+        <div id="camBar" class="cam-bar" style="flex-wrap:wrap;justify-content:center;">
+          <button type="button" class="chip active" data-cam="audience" onclick="set3DCamera('audience')">🎭 Plateia (Frontal)</button>
+          <button type="button" class="chip" data-cam="choreo" onclick="set3DCamera('choreo')">🎬 Coreógrafo (Diagonal)</button>
+          <button type="button" class="chip" data-cam="dancer" onclick="set3DCamera('dancer')">🪞 Visão do Bailarino (De Costas)</button>
+          <button type="button" class="chip" data-cam="side" onclick="set3DCamera('side')">📐 Lateral (Coxia)</button>
+          <button type="button" class="chip" data-cam="top" onclick="set3DCamera('top')">⬆️ Topo 3D</button>
+          <button type="button" class="chip" data-cam="pov" onclick="enterDancerPOV(selectedDancerId)" title="Câmera nos olhos do dançarino selecionado (Atalho: Tecla G)">👀 Olhos do Dançarino (G)</button>
+          <span id="povDancerChips" style="display:inline-flex;gap:4px;align-items:center;"></span>
         </div>
         <div class="step-banner">
           <span style="color:var(--accent-amber);" id="bannerCueName">Cue 1 — Abertura</span>
@@ -1073,24 +1078,25 @@
 
         <div class="shortcut-group">
           <h4>🎬 Marcas (Cues) &amp; Andamento</h4>
-          <div class="shortcut-row"><span><strong>Ajustar Marca Seguinte (ou Criar Nova)</strong></span><span><kbd class="kbd">A</kbd></span></div>
+          <div class="shortcut-row"><span><strong>Ajustar Oito + Marca Seguinte (BPM Automático)</strong></span><span><kbd class="kbd">A</kbd></span></div>
           <div class="shortcut-row"><span>Ir para Marca Anterior / Seguinte</span><span><kbd class="kbd">[</kbd> / <kbd class="kbd">]</kbd></span></div>
           <div class="shortcut-row"><span>Criar Nova Marca (+ Cue) Agora</span><span><kbd class="kbd">N</kbd></span></div>
           <div class="shortcut-row"><span>Marcar Início da Transição (◆ Start)</span><span><kbd class="kbd">S</kbd></span></div>
           <div class="shortcut-row"><span>Marcar Chegada na Pose (■ Arrive)</span><span><kbd class="kbd">E</kbd></span></div>
-          <div class="shortcut-row"><span>Marcar Fim do Oito Atual (Ajusta BPM)</span><span><kbd class="kbd">O</kbd></span></div>
+          <div class="shortcut-row"><span>Marcar Apenas Fim do Oito Atual</span><span><kbd class="kbd">O</kbd></span></div>
           <div class="shortcut-row"><span>Tap Tempo (Bater Andamento)</span><span><kbd class="kbd">T</kbd></span></div>
         </div>
 
         <div class="shortcut-group">
           <h4>🏟️ Palco, Plateia, Bonecos &amp; Visão</h4>
+          <div class="shortcut-row"><span><strong>Ver pelos Olhos do Dançarino (1ª Pessoa 3D)</strong></span><span><kbd class="kbd">G</kbd></span></div>
           <div class="shortcut-row"><span>Girar Posição da Plateia (Baixo/Esq/Cima/Dir)</span><span><kbd class="kbd">P</kbd></span></div>
           <div class="shortcut-row"><span>Alternar Boneco Realista ⇄ Estilizado</span><span><kbd class="kbd">B</kbd></span></div>
           <div class="shortcut-row"><span>Alternar Mapa 2D ⇄ Palco 3D</span><span><kbd class="kbd">V</kbd></span></div>
           <div class="shortcut-row"><span>Auto-Curvar Trajetórias (Desviar)</span><span><kbd class="kbd">C</kbd></span></div>
           <div class="shortcut-row"><span>Tela Cheia do Palco</span><span><kbd class="kbd">F</kbd></span></div>
           <div class="shortcut-row"><span>Zoom In / Out na Timeline</span><span><kbd class="kbd">+</kbd> / <kbd class="kbd">-</kbd></span></div>
-          <div class="shortcut-row"><span>Selecionar Dançarino 1 a 8</span><span><kbd class="kbd">1</kbd> .. <kbd class="kbd">8</kbd></span></div>
+          <div class="shortcut-row"><span>Selecionar Dançarino 1 a 8 (Troca Olhos em POV)</span><span><kbd class="kbd">1</kbd> .. <kbd class="kbd">8</kbd></span></div>
           <div class="shortcut-row"><span>Abrir / Fechar Painel de Atalhos</span><span><kbd class="kbd">H</kbd> ou <kbd class="kbd">?</kbd></span></div>
         </div>
       </div>
@@ -1118,6 +1124,9 @@
     let viewMode = '2d'; // '2d' | '3d'
     let activeCueIndex = 0;
     let liveCueCursorIdx = 1; // Índice da próxima marca que será ajustada pela tecla 'A' / botão
+    let liveEightCursor = 1;  // Oito cujo término (início do próximo Oito) será ajustado junto com a tecla 'A'
+    let active3DCamPreset = 'audience'; // 'audience' | 'choreo' | 'dancer' | 'side' | 'top' | 'pov'
+    let povDancerId = 'd1';   // Dançarino cujos olhos são a câmera 3D no modo 'pov'
     let selectedDancerId = 'd1';
     let currentTime = 0;
     let isPlaying = false;
@@ -1932,6 +1941,33 @@
       ribGrad.addColorStop(1, 'rgba(244, 63, 94, 0.0)');
       ctx2d.fillStyle = ribGrad;
       ctx2d.fillRect(leftMain, botMain - 4, rightMain - leftMain, 20);
+
+      // Platéia Assistindo (2 Fileiras de Poltronas e Espectadores olhando para o palco)
+      const seatCols = Math.max(8, Math.min(16, Math.round(tf.wM * 1.1)));
+      const seatSpanW = (rightMain - leftMain) * 0.92;
+      const seatStartX = tf.cx - seatSpanW / 2;
+      const spectatorColors = ['#38bdf8', '#f4a261', '#2a9d8f', '#e76f51', '#a855f7', '#e9c46a', '#64748b'];
+      for (let row = 0; row < 2; row++) {
+        const rowY = botMain + 18 + row * 15;
+        for (let c = 0; c < seatCols; c++) {
+          const sx = seatStartX + ((c + (row % 2 ? 0.35 : 0.15)) / seatCols) * seatSpanW;
+          // Encosto da poltrona de veludo
+          ctx2d.fillStyle = 'rgba(153, 27, 27, 0.72)';
+          ctx2d.beginPath();
+          ctx2d.roundRect(sx - 6, rowY - 2, 12, 7, 3);
+          ctx2d.fill();
+          // Ombros do espectador
+          ctx2d.fillStyle = spectatorColors[(c + row * 3) % spectatorColors.length] + '99';
+          ctx2d.beginPath();
+          ctx2d.ellipse(sx, rowY - 1, 5.5, 3.2, 0, 0, Math.PI * 2);
+          ctx2d.fill();
+          // Cabeça do espectador olhando para o palco (-Y local)
+          ctx2d.fillStyle = '#e2c29b';
+          ctx2d.beginPath();
+          ctx2d.arc(sx, rowY - 2.2, 2.8, 0, Math.PI * 2);
+          ctx2d.fill();
+        }
+      }
       ctx2d.restore();
 
       // Textos sempre em pé (Plateia / Fundo / Coxias) posicionados nos lados rotacionados
@@ -1954,7 +1990,7 @@
       const upArrow = upArrowBySide[tf.side] || '⬆️';
 
       drawUprightLabel(0, -0.92, `${upArrow} FUNDO (UPSTAGE • ${tf.wM}m × ${tf.dM}m)`, 'rgba(248, 249, 250, 0.62)');
-      drawUprightLabel(0, 0.93, `${sideArrow} FRENTE / PLATEIA (DOWNSTAGE • RIBALTA) ${sideArrow}`, '#fb7185');
+      drawUprightLabel(0, 0.92, `${sideArrow} FRENTE / PLATEIA ASSISTINDO (DOWNSTAGE • RIBALTA) ${sideArrow}`, '#fb7185');
       drawUprightLabel(-1.19, -0.78, 'COXIA ESQ', 'rgba(148, 163, 184, 0.65)', '700 10px Inter, sans-serif', -6);
       drawUprightLabel(-1.19, -0.78, '(WING L)', 'rgba(148, 163, 184, 0.55)', '700 9.5px Inter, sans-serif', 7);
       drawUprightLabel(1.19, -0.78, 'COXIA DIR', 'rgba(148, 163, 184, 0.65)', '700 10px Inter, sans-serif', -6);
@@ -2330,6 +2366,7 @@
     // =========================================================================
     let scene3d = null, camera3d = null, renderer3d = null, controls3d = null;
     let stageEnvironmentGroup3d = null;
+    let audienceSpectators3d = [];
     let dancerMeshes3d = {};
     let pathLines3d = {};
 
@@ -2358,6 +2395,7 @@
         scene3d.remove(stageEnvironmentGroup3d);
       }
       stageEnvironmentGroup3d = new THREE.Group();
+      audienceSpectators3d = [];
       const wM = Math.max(3, Number(project.stageWidthM) || 10);
       const dM = Math.max(3, Number(project.stageDepthM) || 7);
       const floorTex = build3DFloorTexture(wM, dM, project.floorMarking || 'quadrantes');
@@ -2369,12 +2407,22 @@
       stageMesh.position.y = -0.2;
       stageEnvironmentGroup3d.add(stageMesh);
 
-      // Downstage Ribalta Strip (Front / Plateia at Z = +dM/2)
+      // Downstage Ribalta Strip (Front / Plateia at Z = +dM/2) + Luzes da Ribalta (Footlights)
       const ribGeo = new THREE.BoxGeometry(wM, 0.08, 0.14);
       const ribMat = new THREE.MeshBasicMaterial({ color: 0xE76F51 });
       const ribMesh = new THREE.Mesh(ribGeo, ribMat);
       ribMesh.position.set(0, 0.04, dM / 2);
       stageEnvironmentGroup3d.add(ribMesh);
+
+      const footlightBulbGeo = new THREE.SphereGeometry(0.055, 10, 10);
+      const footlightBulbMat = new THREE.MeshBasicMaterial({ color: 0xfde68a });
+      const nBulbs = Math.max(6, Math.round(wM * 1.1));
+      for (let b = 0; b < nBulbs; b++) {
+        const bx = -wM * 0.44 + (wM * 0.88 * b) / Math.max(1, nBulbs - 1);
+        const bulb = new THREE.Mesh(footlightBulbGeo, footlightBulbMat);
+        bulb.position.set(bx, 0.09, dM / 2 - 0.03);
+        stageEnvironmentGroup3d.add(bulb);
+      }
 
       // Left & Right Wings (Coxias)
       const wingW = Math.max(1.6, wM * 0.19);
@@ -2396,6 +2444,117 @@
       rightCurtain.position.set(wM / 2, 1.4, 0);
       stageEnvironmentGroup3d.add(rightCurtain);
 
+      // =====================================================================
+      // PLATÉIA ASSISTINDO EM 3D (3 FILEIRAS DE POLTRONAS E ESPECTADORES)
+      // =====================================================================
+      const audGroup = new THREE.Group();
+      const seatVelvetMat = new THREE.MeshStandardMaterial({ color: 0x7f1d1d, roughness: 0.75 });
+      const seatWoodMat = new THREE.MeshStandardMaterial({ color: 0x291811, roughness: 0.8 });
+      const riserMat = new THREE.MeshStandardMaterial({ color: 0x0b151a, roughness: 0.9 });
+      const outfitColors = [0x1e3a8a, 0x2a9d8f, 0x9a3412, 0x4c1d95, 0x334155, 0xb45309, 0x065f46, 0x831843];
+      const skinColors = [0xf1c27d, 0xe0ac69, 0xc68642, 0x8d5524, 0xffdbac];
+      const hairColors = [0x111827, 0x3f2314, 0x713f12, 0x9ca3af, 0x1f2937];
+
+      const nRows = 3;
+      const seatsPerRow = Math.max(8, Math.min(18, Math.round(wM * 1.15)));
+      const rowSpanW = wM * 0.96;
+
+      for (let r = 0; r < nRows; r++) {
+        const rowZ = dM / 2 + 1.55 + r * 1.08;
+        const rowBaseY = -0.52 + r * 0.24; // Arquibancada de teatro levemente escalonada
+
+        // Degrau / Piso da fileira da plateia
+        const riserGeo = new THREE.BoxGeometry(rowSpanW + 1.2, 0.22, 0.98);
+        const riserMesh = new THREE.Mesh(riserGeo, riserMat);
+        riserMesh.position.set(0, rowBaseY - 0.11, rowZ);
+        audGroup.add(riserMesh);
+
+        for (let s = 0; s < seatsPerRow; s++) {
+          // Deixa um corredor central sutil ou intercala as poltronas em xadrez para melhor visão
+          const stagger = (r % 2 === 1) ? 0.35 : -0.15;
+          const sx = -rowSpanW / 2 + ((s + 0.5 + stagger * 0.5) / seatsPerRow) * rowSpanW;
+          const sz = rowZ + Math.abs(sx / (rowSpanW / 2)) * 0.25; // Leve curvatura de teatro
+
+          const seatGrp = new THREE.Group();
+          seatGrp.position.set(sx, rowBaseY, sz);
+          // Faz a poltrona e o espectador olharem levemente voltados para o centro do palco
+          const lookAngle = Math.atan2(-sx * 0.45, -sz);
+          seatGrp.rotation.y = lookAngle;
+
+          // Assento e Encosto da Poltrona de Veludo
+          const cushionGeo = new THREE.BoxGeometry(0.46, 0.10, 0.44);
+          const cushionMesh = new THREE.Mesh(cushionGeo, seatVelvetMat);
+          cushionMesh.position.set(0, 0.36, 0);
+          seatGrp.add(cushionMesh);
+
+          const backRestGeo = new THREE.BoxGeometry(0.48, 0.56, 0.09);
+          const backRestMesh = new THREE.Mesh(backRestGeo, seatVelvetMat);
+          backRestMesh.position.set(0, 0.64, -0.19);
+          seatGrp.add(backRestMesh);
+
+          const armRestGeo = new THREE.BoxGeometry(0.06, 0.24, 0.42);
+          [-0.24, 0.24].forEach((ax) => {
+            const arm = new THREE.Mesh(armRestGeo, seatWoodMat);
+            arm.position.set(ax, 0.44, 0);
+            seatGrp.add(arm);
+          });
+
+          // Espectador sentado assistindo ao espetáculo (frente local +Z da poltrona aponta para o palco!)
+          const specPivot = new THREE.Group();
+          specPivot.position.set(0, 0.42, 0.02);
+
+          const idxSeed = r * 19 + s * 7;
+          const outfitMat = new THREE.MeshStandardMaterial({
+            color: outfitColors[idxSeed % outfitColors.length],
+            roughness: 0.65
+          });
+          const skinMat = new THREE.MeshStandardMaterial({
+            color: skinColors[idxSeed % skinColors.length],
+            roughness: 0.55
+          });
+          const hairMat = new THREE.MeshStandardMaterial({
+            color: hairColors[idxSeed % hairColors.length],
+            roughness: 0.7
+          });
+
+          // Tronco e Ombros do espectador
+          const torsoGeo = new THREE.BoxGeometry(0.38, 0.44, 0.20);
+          const torsoMesh = new THREE.Mesh(torsoGeo, outfitMat);
+          torsoMesh.position.set(0, 0.22, -0.02);
+          specPivot.add(torsoMesh);
+
+          // Pernas dobradas sentadas
+          const thighGeo = new THREE.BoxGeometry(0.34, 0.13, 0.36);
+          const thighMesh = new THREE.Mesh(thighGeo, seatWoodMat);
+          thighMesh.position.set(0, 0.04, 0.10);
+          specPivot.add(thighMesh);
+
+          // Cabeça + Cabelo do espectador
+          const headPivot = new THREE.Group();
+          headPivot.position.set(0, 0.56, 0.0);
+
+          const headGeo = new THREE.SphereGeometry(0.125, 14, 14);
+          const headMesh = new THREE.Mesh(headGeo, skinMat);
+          headPivot.add(headMesh);
+
+          const hairGeo = new THREE.SphereGeometry(0.132, 14, 14);
+          const hairMesh = new THREE.Mesh(hairGeo, hairMat);
+          hairMesh.position.set(0, 0.025, -0.025);
+          headPivot.add(hairMesh);
+
+          specPivot.add(headPivot);
+          seatGrp.add(specPivot);
+          audGroup.add(seatGrp);
+
+          audienceSpectators3d.push({
+            specPivot,
+            headPivot,
+            phaseOffset: (idxSeed % 11) * 0.6
+          });
+        }
+      }
+
+      stageEnvironmentGroup3d.add(audGroup);
       scene3d.add(stageEnvironmentGroup3d);
     }
 
@@ -2771,8 +2930,44 @@
       });
     }
 
+    function syncCamBarUI() {
+      const camBtns = document.querySelectorAll('#camBar > .chip[data-cam]');
+      camBtns.forEach((btn) => {
+        btn.classList.toggle('active', btn.getAttribute('data-cam') === active3DCamPreset);
+      });
+      const povBox = document.getElementById('povDancerChips');
+      if (povBox) {
+        povBox.innerHTML = project.dancers.map((d) => {
+          const isPovActive = (active3DCamPreset === 'pov' && povDancerId === d.id);
+          return `<button type="button" class="chip ${isPovActive ? 'active' : ''}" style="padding:3px 7px;border-color:${d.color};${isPovActive ? `background:${d.color};color:#0f1d23;font-weight:900;` : ''}" onclick="enterDancerPOV('${d.id}')" title="Ver o palco pelos olhos de ${d.name}">👀 ${d.code}</button>`;
+        }).join('');
+      }
+    }
+
+    function enterDancerPOV(dancerId) {
+      const targetId = dancerId || selectedDancerId || (project.dancers[0] && project.dancers[0].id);
+      if (!targetId) return;
+      povDancerId = targetId;
+      selectedDancerId = targetId;
+      active3DCamPreset = 'pov';
+      if (viewMode !== '3d') {
+        setViewMode('3d');
+      }
+      if (controls3d) controls3d.enabled = false;
+      syncCamBarUI();
+      renderDancerList();
+      syncDancerInspector();
+      updateAndRender3D();
+    }
+
     function set3DCamera(preset) {
+      active3DCamPreset = preset || 'audience';
+      if (preset === 'pov') {
+        enterDancerPOV(povDancerId || selectedDancerId);
+        return;
+      }
       if (!camera3d || !controls3d) return;
+      controls3d.enabled = true;
       controls3d.target.set(0, 0.8, 0);
       const rotRad = getAudienceRotationRad(project.audienceSide || 'bottom');
       const rotVec = (x, z) => ({
@@ -2797,6 +2992,7 @@
         camera3d.position.set(v.rx, 16.5, v.rz);
       }
       controls3d.update();
+      syncCamBarUI();
     }
 
     function updateAndRender3D() {
@@ -2822,6 +3018,8 @@
         grp.position.x = pos.x * halfW;
         grp.position.z = pos.z * halfD;
         grp.rotation.y = ((pos.angle || 0) * Math.PI) / 180;
+        // No modo POV (Olhos do Dançarino), oculta apenas o próprio corpo do dançarino da câmera para não obstruir a visão
+        grp.visible = !(active3DCamPreset === 'pov' && d.id === povDancerId);
 
         const ud = grp.userData;
         if (ud.isRealistic) {
@@ -2856,7 +3054,41 @@
         }
       });
 
-      controls3d.update();
+      // Animação sutil da Platéia Assistindo (acompanhando o ritmo do sapateado)
+      if (audienceSpectators3d.length > 0) {
+        audienceSpectators3d.forEach((sp) => {
+          if (isPlaying) {
+            const wave = Math.sin(beatPhase * 0.5 + sp.phaseOffset);
+            sp.headPivot.rotation.x = wave * 0.07;
+            sp.specPivot.rotation.z = Math.cos(beatPhase * 0.25 + sp.phaseOffset) * 0.035;
+          } else {
+            sp.headPivot.rotation.x = 0;
+            sp.specPivot.rotation.z = 0;
+          }
+        });
+      }
+
+      // Câmera em 1ª Pessoa ("Olhos do Dançarino")
+      if (active3DCamPreset === 'pov') {
+        const povPos = renderPositions[povDancerId] || renderPositions[selectedDancerId] || { x: 0, z: 0, angle: 0 };
+        const eyeX = povPos.x * halfW;
+        const eyeZ = povPos.z * halfD;
+        const bounceY = isPlaying ? Math.abs(Math.cos(beatPhase)) * 0.032 : 0;
+        const eyeY = 1.66 + bounceY;
+        const yawRad = ((povPos.angle || 0) * Math.PI) / 180;
+        // Em angle=0° o dançarino olha para +Z (Plateia); em angle=90° olha para +X; em angle=180° olha para -Z (Fundo)
+        const lookDist = 6.5;
+        const targetX = eyeX + Math.sin(yawRad) * lookDist;
+        const targetZ = eyeZ + Math.cos(yawRad) * lookDist;
+        const targetY = eyeY - 0.22;
+
+        camera3d.position.set(eyeX, eyeY, eyeZ);
+        controls3d.target.set(targetX, targetY, targetZ);
+        camera3d.lookAt(targetX, targetY, targetZ);
+      } else {
+        controls3d.update();
+      }
+
       renderer3d.render(scene3d, camera3d);
     }
 
@@ -3037,7 +3269,8 @@
 
         // Bandeira de Mudança de BPM / Compasso na timeline (arrastável!)
         if (b.isTempoChange) {
-          const badgeTxt = `♩${b.bpm} (${b.num}/${b.den})`;
+          const bpmClean = Number(b.bpm).toFixed(1).replace(/\.0$/, '');
+          const badgeTxt = `♩${bpmClean} (${b.num}/${b.den})`;
           tlCtx.save();
           tlCtx.font = '800 9px Inter, sans-serif';
           const tw = tlCtx.measureText(badgeTxt).width + 10;
@@ -3264,7 +3497,15 @@
       } else if (tlDragType === 'cueStart' && tlDragCueIndex > 0) {
         const cue = project.cues[tlDragCueIndex];
         const prevCue = project.cues[tlDragCueIndex - 1];
-        cue.startTime = Math.max(prevCue.arriveTime, Math.min(cue.arriveTime, t));
+        const prevDur = Math.max(0.4, cue.arriveTime - cue.startTime);
+        cue.startTime = Math.max(prevCue.arriveTime, t);
+        if (cue.arriveTime < cue.startTime + 0.2) {
+          cue.arriveTime = Math.min(project.duration, Math.round((cue.startTime + prevDur) * 1000) / 1000);
+        }
+        // Mantém o Início do Oito e o BPM ajustados conforme a marca (a menos que segure Alt para mover só a marca)
+        if (!e.altKey) {
+          setEightEndTime(tlDragCueIndex, cue.startTime, false);
+        }
         syncCueInspector();
         renderCueList();
       } else if (tlDragType === 'cueArrive' && tlDragCueIndex >= 0) {
@@ -3319,18 +3560,26 @@
     function renderDancerList() {
       const box = document.getElementById('dancerList');
       document.getElementById('dancerCountLabel').textContent = project.dancers.length;
-      box.innerHTML = project.dancers.map((d) => `
+      box.innerHTML = project.dancers.map((d) => {
+        const isPov = (viewMode === '3d' && active3DCamPreset === 'pov' && povDancerId === d.id);
+        return `
         <div class="dancer-row ${d.id === selectedDancerId ? 'selected' : ''}" onclick="selectDancer('${d.id}')">
           <div class="dancer-badge" style="background:${d.color};">${d.code}</div>
           <input type="text" class="dancer-name-input" value="${d.name}" onclick="event.stopPropagation()" oninput="renameDancer('${d.id}', this.value)" />
+          <button type="button" class="btn ${isPov ? 'btn-amber' : ''}" style="padding:1px 6px;font-size:0.68rem;" onclick="event.stopPropagation();enterDancerPOV('${d.id}')" title="Ver o palco pelos olhos de ${d.name} (1ª Pessoa 3D)">👀</button>
           <input type="color" class="dancer-color-input" value="${d.color}" onclick="event.stopPropagation()" oninput="recolorDancer('${d.id}', this.value)" />
           <button type="button" class="btn" style="padding:1px 5px;font-size:0.68rem;" onclick="event.stopPropagation();removeDancer('${d.id}')" title="Remover">✕</button>
         </div>
-      `).join('');
+      `;
+      }).join('');
+      syncCamBarUI();
     }
 
     function selectDancer(id) {
       selectedDancerId = id;
+      if (viewMode === '3d' && active3DCamPreset === 'pov') {
+        povDancerId = id;
+      }
       renderDancerList();
       syncDancerInspector();
     }
@@ -3487,6 +3736,7 @@
     function selectCue(idx) {
       activeCueIndex = idx;
       liveCueCursorIdx = idx + 1;
+      liveEightCursor = Math.max(1, idx + 1);
       isPlaying = false;
       currentTime = project.cues[idx].arriveTime;
       syncCueInspector();
@@ -3571,14 +3821,16 @@
       box.innerHTML = project.tempoMap.map((tm, idx) => {
         const barObj = grid.bars.find((b) => b.bar === tm.bar);
         const tSec = barObj ? barObj.startTime : 0;
+        const bpmClean = Number(tm.bpm).toFixed(1).replace(/\.0$/, '');
+        const eightNum = Math.floor((tm.bar - 1) / 2) + 1;
         return `
           <div class="cue-item" onclick="selectTempoNode(${idx})">
             <div class="cue-item-top">
-              <span>Compasso ${tm.bar} (${tSec.toFixed(2)}s)</span>
-              <span style="color:var(--accent-amber);">♩ ${tm.bpm} BPM • ${tm.num}/${tm.den}</span>
+              <span>Oito ${eightNum} • Comp. ${tm.bar} (${tSec.toFixed(3)}s)</span>
+              <span style="color:var(--accent-amber);">♩ ${bpmClean} BPM • ${tm.num}/${tm.den}</span>
             </div>
             <div class="cue-item-sub">
-              <span>${idx === 0 ? 'Andamento Base Inicial' : 'Mudança de Andamento/Fórmula (arraste na timeline)'}</span>
+              <span>${idx === 0 ? 'Andamento do Oito 1' : `Início do Oito ${eightNum} ajustado`}</span>
               ${idx > 0 ? `<button type="button" class="btn" style="padding:0 5px;font-size:0.65rem;color:#f87171;" onclick="event.stopPropagation();removeTempoNode(${idx})">✕</button>` : ''}
             </div>
           </div>
@@ -3635,9 +3887,15 @@
     // =========================================================================
     // AJUSTE AUTOMÁTICO DE ANDAMENTO PELOS OITOS (8 TEMPOS POR OITO)
     // =========================================================================
-    function setEightEndTime(eightNum, targetEndTimeSec) {
+    function setEightEndTime(eightNum, targetEndTimeSec, propagateForward = false) {
       ensureTempoMap();
       const n = Math.max(1, Math.round(Number(eightNum) || 1));
+      if (targetEndTimeSec >= project.duration - 3) {
+        project.duration = Math.ceil(targetEndTimeSec + 10);
+        const durInp = document.getElementById('durationInput');
+        if (durInp) durInp.value = project.duration;
+      }
+
       const gridBefore = buildMusicalGrid();
       const startBeatIdx = (n - 1) * 8;
       const endBeatIdx = n * 8;
@@ -3645,17 +3903,25 @@
       if (!startBeat) return;
 
       const startT = startBeat.time;
-      const dt = Math.max(1.6, targetEndTimeSec - startT); // Duração deste Oito (8 pulsos)
+      const dt = Math.max(1.2, targetEndTimeSec - startT); // Duração exata deste Oito (8 pulsos)
       const den = startBeat.den || 4;
-      // 8 pulsos em dt segundos => pulseSec = dt / 8 => BPM = 60 * (4/den) / (dt/8) = 480 * (4/den) / dt
-      const exactBpm = Math.max(40, Math.min(240, Math.round(((480 * (4 / den)) / dt) * 10) / 10));
+      const num = startBeat.num || 4;
+      // 8 pulsos em dt segundos => BPM exato com 4 casas decimais para precisão de < 0.1ms no início do próximo Oito!
+      const exactBpm = Math.max(30, Math.min(300, Number(((480 * (4 / den)) / dt).toFixed(4))));
 
-      // Preserva o BPM que vigorava a partir do próximo Oito (endBeatIdx)
       const nextEightBeat = gridBefore.beats[endBeatIdx];
-      const nextBar = nextEightBeat ? nextEightBeat.bar : (startBeat.bar + 2);
+      const nextBar = nextEightBeat ? nextEightBeat.bar : (startBeat.bar + Math.max(1, Math.round(8 / num)));
       const nextBpm = nextEightBeat ? nextEightBeat.bpm : exactBpm;
-      const nextNum = nextEightBeat ? nextEightBeat.num : (startBeat.num || 4);
+      const nextNum = nextEightBeat ? nextEightBeat.num : num;
       const nextDen = nextEightBeat ? nextEightBeat.den : den;
+
+      // Remove quaisquer nós intermediários dentro do Oito #n para que todo o Oito #n tenha esse andamento exato
+      project.tempoMap = project.tempoMap.filter((tm) => !(tm.bar > startBeat.bar && tm.bar < nextBar));
+
+      // Se estamos marcando em tempo real com a tecla A (propagateForward = true), propaga esse novo andamento para frente
+      if (propagateForward) {
+        project.tempoMap = project.tempoMap.filter((tm) => tm.bar <= startBeat.bar);
+      }
 
       // Insere ou atualiza a mudança de BPM no compasso onde começa o Oito #n
       let nodeStart = project.tempoMap.find((x) => x.bar === startBeat.bar);
@@ -3666,24 +3932,28 @@
           id: 'tm_e' + n,
           bar: startBeat.bar,
           bpm: exactBpm,
-          num: startBeat.num || 4,
+          num,
           den
         });
       }
 
-      // Garante um nó no início do próximo Oito para que os Oitos seguintes mantenham seu andamento
-      if (!project.tempoMap.some((x) => x.bar === nextBar)) {
-        project.tempoMap.push({
-          id: 'tm_e' + (n + 1),
-          bar: nextBar,
-          bpm: nextBpm,
-          num: nextNum,
-          den: nextDen
-        });
+      // Quando arrastando uma divisória específica na timeline (propagateForward = false), preserva o andamento dos Oitos seguintes
+      if (!propagateForward) {
+        let nodeNext = project.tempoMap.find((x) => x.bar === nextBar);
+        if (!nodeNext) {
+          project.tempoMap.push({
+            id: 'tm_e' + (n + 1),
+            bar: nextBar,
+            bpm: nextBpm,
+            num: nextNum,
+            den: nextDen
+          });
+        }
       }
 
       ensureTempoMap();
-      document.getElementById('bpmInput').value = project.bpm;
+      const bpmInp = document.getElementById('bpmInput');
+      if (bpmInp) bpmInp.value = Number(exactBpm).toFixed(1).replace(/\.0$/, '');
       const numInp = document.getElementById('eightSyncNumInput');
       const timeInp = document.getElementById('eightSyncTimeInput');
       if (numInp) numInp.value = n;
@@ -3885,44 +4155,90 @@
     function updateStampNextButtonLabel() {
       const btn = document.getElementById('btnStampNextCue');
       const hudBtn = document.getElementById('btnHudStampNext');
+      const nextEightNum = Math.max(2, (liveEightCursor || 1) + 1);
       const hasNext = liveCueCursorIdx >= 1 && liveCueCursorIdx < project.cues.length;
       const txt = hasNext
-        ? `⚡ Ajustar Cue ${liveCueCursorIdx + 1} (A)`
-        : `⚡ + Nova Marca ${project.cues.length + 1} (A)`;
+        ? `⚡ Oito ${nextEightNum} + Cue ${liveCueCursorIdx + 1} (A)`
+        : `⚡ + Oito ${nextEightNum} / Cue ${project.cues.length + 1} (A)`;
       if (btn) btn.textContent = txt;
       if (hudBtn) hudBtn.textContent = txt;
     }
 
-    // Ajusta a marca seguinte para o tempo atual (quando clicado ou tecla A); se não houver marca seguinte, cria uma nova!
+    // Ajusta o Início do próximo Oito (recalculando o BPM do Oito que terminou) JUNTO com a Marca (Cue) seguinte no tempo atual (Tecla A)!
+    // Se não houver marca futura, ajusta o Oito e cria uma nova Marca alinhada ao início desse Oito.
     function stampNextCueOrCreate() {
-      const nowT = quantizeTimelineTime(currentTime);
+      // Usa o tempo exato em milissegundos (sem snap na grade antiga) para calibrar o início real do Oito
+      const nowT = Math.max(0.25, Math.round(currentTime * 1000) / 1000);
+      const targetEightToFinish = Math.max(1, liveEightCursor || 1);
+
+      // 1. Ajusta o término do Oito `targetEightToFinish` para `nowT`, fazendo o Início do Oito `(targetEightToFinish + 1)`
+      // cair exatamente em `nowT` e recalculando o andamento (BPM) automaticamente!
+      setEightEndTime(targetEightToFinish, nowT, true);
+
+      // Reconstrói a grade musical já com o novo BPM para alinhar a Marca (Cue) e as marcas futuras aos Oitos
+      const newGrid = buildMusicalGrid();
       const beatSec = getBeatDuration(nowT);
 
       if (liveCueCursorIdx >= 1 && liveCueCursorIdx < project.cues.length) {
         const targetCue = project.cues[liveCueCursorIdx];
-        const prevDur = Math.max(beatSec * 2, targetCue.arriveTime - targetCue.startTime);
-        targetCue.startTime = nowT;
-        targetCue.arriveTime = Math.min(project.duration, Math.round((nowT + prevDur) * 1000) / 1000);
+        const prevCue = project.cues[liveCueCursorIdx - 1];
+        if (prevCue && prevCue.arriveTime > nowT - 0.1) {
+          prevCue.arriveTime = Math.max(prevCue.startTime, Math.round((nowT - beatSec) * 1000) / 1000);
+        }
 
-        // Se houver marcas posteriores que ficaram antes desta, empurra-as para manter a ordem cronológica
+        // O início da Marca (◆ Start) fica cravado no início deste novo Oito (nowT)
+        targetCue.startTime = nowT;
+        targetCue.arriveTime = Math.min(project.duration, Math.round((nowT + beatSec * 4) * 1000) / 1000);
+
+        // Reposiciona as marcas futuras (que ainda não foram batidas com 'A') nos inícios dos próximos Oitos
         for (let i = liveCueCursorIdx + 1; i < project.cues.length; i++) {
-          const prev = project.cues[i - 1];
-          const cur = project.cues[i];
-          const d = Math.max(beatSec * 2, cur.arriveTime - cur.startTime);
-          if (cur.startTime < prev.arriveTime + 0.1) {
-            cur.startTime = Math.round((prev.arriveTime + beatSec * 2) * 1000) / 1000;
-            cur.arriveTime = Math.min(project.duration, Math.round((cur.startTime + d) * 1000) / 1000);
+          const offsetEights = i - liveCueCursorIdx;
+          const futureEightNum = targetEightToFinish + 1 + offsetEights;
+          const futureBeat = newGrid.beats[(futureEightNum - 1) * 8];
+          const futureStartT = futureBeat
+            ? Math.round(futureBeat.time * 1000) / 1000
+            : Math.round((nowT + offsetEights * 8 * beatSec) * 1000) / 1000;
+          if (futureStartT >= project.duration - 2) {
+            project.duration = Math.ceil(futureStartT + 10);
+            const durInp = document.getElementById('durationInput');
+            if (durInp) durInp.value = project.duration;
           }
+          project.cues[i].startTime = futureStartT;
+          project.cues[i].arriveTime = Math.min(project.duration, Math.round((futureStartT + beatSec * 4) * 1000) / 1000);
         }
 
         activeCueIndex = liveCueCursorIdx;
         liveCueCursorIdx++;
+        liveEightCursor = targetEightToFinish + 1;
+        lastBeatPlayed = targetEightToFinish * 8;
+        playTapClick(1);
         syncAllUI();
       } else {
-        // Não há marca seguinte para ajustar: cria uma nova marca aqui!
-        addCueAtCurrentTime();
+        // Não há marca seguinte: cria uma nova Marca cravada no início deste novo Oito (nowT)!
+        const st = getStageStateAtTime(nowT);
+        const arriveT = Math.min(project.duration, Math.round((nowT + beatSec * 4) * 1000) / 1000);
+        const newPos = {};
+        project.dancers.forEach((d) => {
+          const cur = st.positions[d.id] || { x: 0, z: 0, angle: 0 };
+          newPos[d.id] = { x: cur.x, z: cur.z, angle: cur.angle || 0, ctrlX: 0, ctrlZ: 0, offsetBeats: 0, step: '' };
+        });
+        const newEightNum = targetEightToFinish + 1;
+        const newCue = {
+          id: 'cue_' + Date.now().toString(36),
+          name: `Cue ${project.cues.length + 1} — Oito ${newEightNum}`,
+          step: 'Time Step',
+          startTime: nowT,
+          arriveTime: arriveT,
+          positions: newPos
+        };
+        project.cues.push(newCue);
+        project.cues.sort((a, b) => a.startTime - b.startTime);
+        activeCueIndex = project.cues.indexOf(newCue);
         liveCueCursorIdx = project.cues.length;
-        updateStampNextButtonLabel();
+        liveEightCursor = targetEightToFinish + 1;
+        lastBeatPlayed = targetEightToFinish * 8;
+        playTapClick(1);
+        syncAllUI();
       }
     }
 
@@ -4003,8 +4319,9 @@
 
     function seekTo(t) {
       currentTime = Math.max(0, Math.min(project.duration, t));
-      if (currentTime <= 0.05) {
+      if (currentTime <= 0.15) {
         liveCueCursorIdx = 1;
+        liveEightCursor = 1;
       } else {
         // Aponta o cursor de captura para a primeira marca cujo startTime vem depois de currentTime (ou para criar nova)
         let nextIdx = project.cues.length;
@@ -4015,6 +4332,8 @@
           }
         }
         liveCueCursorIdx = nextIdx;
+        const info = getMusicalInfoAtTime(currentTime);
+        liveEightCursor = Math.max(1, info.eightNum);
       }
       updateStampNextButtonLabel();
       syncAudioElementToTimeline();
@@ -4289,8 +4608,9 @@
       const info = getMusicalInfoAtTime(currentTime);
       const eightNum = info.eightNum;
       const beatInEight = info.beatInEight;
+      const bpmDisp = Number(info.bpm).toFixed(1).replace(/\.0$/, '');
 
-      document.getElementById('hudEightText').textContent = `Oito ${eightNum} • Tempo ${beatInEight}  |  Comp. ${info.bar} (${info.num}/${info.den} • ${info.bpm} BPM)`;
+      document.getElementById('hudEightText').textContent = `Oito ${eightNum} • Tempo ${beatInEight}  |  Comp. ${info.bar} (${info.num}/${info.den} • ${bpmDisp} BPM)`;
       const leds = document.getElementById('eightLeds').children;
       for (let i = 0; i < 8; i++) {
         leds[i].className = 'beat-led' + ((i + 1 === beatInEight) ? (beatInEight === 1 ? ' active-one' : ' active') : '');
@@ -4298,7 +4618,12 @@
 
       const st = getStageStateAtTime(currentTime);
       const badge = document.getElementById('hudStateBadge');
-      if (st.inTransition) {
+      if (viewMode === '3d' && active3DCamPreset === 'pov') {
+        const povDancer = project.dancers.find((d) => d.id === povDancerId) || project.dancers[0];
+        const povPos = (isPlaying ? st.positions : (project.cues[activeCueIndex] && project.cues[activeCueIndex].positions))[povDancer ? povDancer.id : 'd1'] || { angle: 0 };
+        badge.textContent = `👀 OLHOS DE: ${povDancer ? povDancer.name : 'A'} (${Math.round(povPos.angle || 0)}°)`;
+        badge.style.color = '#38bdf8';
+      } else if (st.inTransition) {
         badge.textContent = `🟠 EM TRANSIÇÃO (${Math.round(st.progress * 100)}%)`;
         badge.style.color = '#fbbf24';
       } else {
@@ -4344,6 +4669,7 @@
         if (currentTime >= project.duration) {
           currentTime = 0;
           liveCueCursorIdx = 1;
+          liveEightCursor = 1;
           updateStampNextButtonLabel();
           syncAudioElementToTimeline();
         }
@@ -4414,6 +4740,16 @@
       } else if (e.code === 'KeyV') {
         e.preventDefault();
         setViewMode(viewMode === '2d' ? '3d' : '2d');
+      } else if (e.code === 'KeyG') {
+        e.preventDefault();
+        if (viewMode === '3d' && active3DCamPreset === 'pov') {
+          // Alterna para os olhos do próximo dançarino
+          const curIdx = project.dancers.findIndex((d) => d.id === povDancerId);
+          const nextD = project.dancers[(curIdx + 1) % project.dancers.length];
+          if (nextD) enterDancerPOV(nextD.id);
+        } else {
+          enterDancerPOV(selectedDancerId);
+        }
       } else if (e.code === 'KeyB') {
         e.preventDefault();
         toggleAvatarStyle();
@@ -4439,9 +4775,7 @@
         const idx = Number(e.code.replace('Digit', '')) - 1;
         if (project.dancers[idx]) {
           e.preventDefault();
-          selectedDancerId = project.dancers[idx].id;
-          syncDancerInspector();
-          renderDancerList();
+          selectDancer(project.dancers[idx].id);
         }
       }
     });
