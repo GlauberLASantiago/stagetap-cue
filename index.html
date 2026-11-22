@@ -904,7 +904,7 @@
           <button type="button" class="chip" data-cam="dancer" onclick="set3DCamera('dancer')">🪞 Visão do Bailarino (De Costas)</button>
           <button type="button" class="chip" data-cam="side" onclick="set3DCamera('side')">📐 Lateral (Coxia)</button>
           <button type="button" class="chip" data-cam="top" onclick="set3DCamera('top')">⬆️ Topo 3D</button>
-          <button type="button" class="chip" data-cam="pov" onclick="enterDancerPOV(selectedDancerId)" title="Câmera nos olhos do dançarino selecionado (Atalho: Tecla G)">👀 Olhos do Dançarino (G)</button>
+          <button type="button" class="chip" data-cam="pov" onclick="enterDancerPOV(selectedDancerId, true)" title="Câmera nos olhos do dançarino selecionado — clique novamente para voltar à câmera normal (Atalho: Tecla G)">👀 Olhos do Dançarino (G)</button>
           <span id="povDancerChips" style="display:inline-flex;gap:4px;align-items:center;"></span>
         </div>
         <div class="step-banner">
@@ -1350,6 +1350,8 @@
     let liveCueCursorIdx = 1; // Índice da próxima marca que será ajustada pela tecla 'A' / botão
     let liveEightCursor = 1;  // Oito cujo término (início do próximo Oito) será ajustado junto com a tecla 'A'
     let active3DCamPreset = 'audience'; // 'audience' | 'choreo' | 'dancer' | 'side' | 'top' | 'pov'
+    let prev3DCamPreset = 'audience';   // Câmera 3D normal anterior ao modo POV
+    let prevViewModeBeforePOV = null;   // Guarda se o usuário estava em '2d' ou '3d' antes de clicar no olho
     let povDancerId = 'd1';   // Dançarino cujos olhos são a câmera 3D no modo 'pov'
     let selectedDancerId = 'd1';
     let currentTime = 0;
@@ -3163,14 +3165,46 @@
       if (povBox) {
         povBox.innerHTML = project.dancers.map((d) => {
           const isPovActive = (active3DCamPreset === 'pov' && povDancerId === d.id);
-          return `<button type="button" class="chip ${isPovActive ? 'active' : ''}" style="padding:3px 7px;border-color:${d.color};${isPovActive ? `background:${d.color};color:#0f1d23;font-weight:900;` : ''}" onclick="enterDancerPOV('${d.id}')" title="Ver o palco pelos olhos de ${d.name}">👀 ${d.code}</button>`;
+          return `<button type="button" class="chip ${isPovActive ? 'active' : ''}" style="padding:3px 7px;border-color:${d.color};${isPovActive ? `background:${d.color};color:#0f1d23;font-weight:900;` : ''}" onclick="enterDancerPOV('${d.id}', true)" title="${isPovActive ? 'Clique novamente para voltar à visualização normal' : `Ver o palco pelos olhos de ${d.name}`}">👀 ${d.code}</button>`;
         }).join('');
       }
     }
 
-    function enterDancerPOV(dancerId) {
+    function exitDancerPOV(stayIn3D = false) {
+      const normalCam = (prev3DCamPreset && prev3DCamPreset !== 'pov') ? prev3DCamPreset : 'audience';
+      set3DCamera(normalCam);
+      // Garante que todos os bonecos voltem a ficar visíveis
+      Object.values(dancerMeshes3d).forEach((grp) => {
+        if (grp) grp.visible = true;
+      });
+      if (!stayIn3D && prevViewModeBeforePOV === '2d') {
+        prevViewModeBeforePOV = null;
+        setViewMode('2d');
+      } else {
+        prevViewModeBeforePOV = null;
+        updateAndRender3D();
+      }
+      syncCamBarUI();
+      renderDancerList();
+      syncDancerInspector();
+    }
+
+    function enterDancerPOV(dancerId, fromCamBar = false) {
       const targetId = dancerId || selectedDancerId || (project.dancers[0] && project.dancers[0].id);
       if (!targetId) return;
+
+      // Se já está na visão pelos olhos deste mesmo dançarino (ou clicou no botão geral 👀 Olhos do Dançarino já estando em POV),
+      // clicar novamente no olho volta para a visualização normal!
+      if (viewMode === '3d' && active3DCamPreset === 'pov' && (povDancerId === targetId || !dancerId)) {
+        exitDancerPOV(fromCamBar);
+        return;
+      }
+
+      if (active3DCamPreset !== 'pov') {
+        prev3DCamPreset = active3DCamPreset || 'audience';
+        prevViewModeBeforePOV = viewMode;
+      }
+
       povDancerId = targetId;
       selectedDancerId = targetId;
       active3DCamPreset = 'pov';
@@ -3185,11 +3219,13 @@
     }
 
     function set3DCamera(preset) {
-      active3DCamPreset = preset || 'audience';
       if (preset === 'pov') {
-        enterDancerPOV(povDancerId || selectedDancerId);
+        enterDancerPOV(povDancerId || selectedDancerId, true);
         return;
       }
+      active3DCamPreset = preset || 'audience';
+      prev3DCamPreset = active3DCamPreset;
+      prevViewModeBeforePOV = null;
       if (!camera3d || !controls3d) return;
       controls3d.enabled = true;
       controls3d.target.set(0, 0.8, 0);

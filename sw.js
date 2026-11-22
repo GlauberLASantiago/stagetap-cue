@@ -1,4 +1,4 @@
-const CACHE_NAME = 'stagetap-cue-v13';
+const CACHE_NAME = 'stagetap-cue-v14';
 const APP_SHELL = [
   './',
   './index.html',
