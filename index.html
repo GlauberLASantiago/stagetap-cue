@@ -688,12 +688,12 @@
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px;">
           <div>
             <label class="field-label"><span style="color:#fbbf24;">◆ Início Transição (s)</span></label>
-            <input type="number" id="cueStartInput" class="input-num" step="0.25" min="0" onchange="updateActiveCueTiming()" />
+            <input type="number" id="cueStartInput" class="input-num" step="0.001" min="0" onchange="updateActiveCueTiming()" />
             <button type="button" class="chip" style="width:100%;margin-top:4px;" onclick="markCueStartNow()">📍 Marcar no Tempo Atual</button>
           </div>
           <div>
             <label class="field-label"><span style="color:#38bdf8;">■ Chegada / Pose (s)</span></label>
-            <input type="number" id="cueArriveInput" class="input-num" step="0.25" min="0" onchange="updateActiveCueTiming()" />
+            <input type="number" id="cueArriveInput" class="input-num" step="0.001" min="0" onchange="updateActiveCueTiming()" />
             <button type="button" class="chip" style="width:100%;margin-top:4px;" onclick="markCueArriveNow()">🏁 Marcar no Tempo Atual</button>
           </div>
         </div>
@@ -708,34 +708,45 @@
         <button type="button" class="btn" onclick="seekTo(0)" title="Voltar ao início">⏮</button>
         <button type="button" id="btnPlayPause" class="btn btn-primary" onclick="togglePlay()" style="min-width:92px;justify-content:center;">▶ Play</button>
         <button type="button" class="btn" onclick="addCueAtCurrentTime()" title="Criar nova marca de posição no tempo atual">+ Marca Aqui</button>
-        <span class="time-readout" id="timeReadout">00:00.0 / 00:32.0</span>
+        <span class="time-readout" id="timeReadout">00:00.000 / 00:32.000</span>
       </div>
 
       <div class="transport-group">
         <button type="button" id="btnMetronome" class="btn" onclick="toggleMetronome()">🔔 Metrônomo: OFF</button>
         <label style="font-size:0.74rem;font-weight:700;color:var(--text-sub);display:flex;align-items:center;gap:4px;">
           BPM:
-          <input type="number" id="bpmInput" class="input-num" value="120" min="50" max="220" style="width:56px;padding:3px 5px;" onchange="updateBpm(this.value)" />
+          <input type="number" id="bpmInput" class="input-num" value="115" min="50" max="220" style="width:54px;padding:3px 5px;" onchange="updateBpm(this.value)" />
         </label>
         <button type="button" id="btnAutoBpm" class="btn btn-amber" onclick="detectBpmAndDownbeatFromBuffer(true)" title="Detectar andamento (BPM) e 1º tempo automaticamente a partir do áudio">⚡ Auto BPM</button>
         <button type="button" id="btnTapTempo" class="btn" onclick="handleTapTempo()" title="Clique no ritmo da música (ou tecla T) para medir o BPM">👆 Tap</button>
+        <label style="font-size:0.73rem;font-weight:700;color:var(--text-sub);display:flex;align-items:center;gap:3px;" title="Resolução da timeline: Livre (1 milissegundo) ou alinhada à grade musical">
+          🧲 Grade:
+          <select id="snapGridSelect" class="input-num" style="width:136px;padding:3px 5px;" onchange="updateSnapGridMode(this.value)">
+            <option value="ms" selected>Livre (1 ms / 0.001s)</option>
+            <option value="16th">Semicolcheia (1/4 t)</option>
+            <option value="triplet">Tercina Swing (1/3 t)</option>
+            <option value="8th">Colcheia (1/2 t)</option>
+            <option value="beat">Semínima (1 tempo)</option>
+            <option value="eight">Oito (8 tempos)</option>
+          </select>
+        </label>
         <label style="font-size:0.74rem;font-weight:700;color:var(--text-sub);display:flex;align-items:center;gap:4px;">
-          Duração (s):
-          <input type="number" id="durationInput" class="input-num" value="32" min="8" max="300" style="width:52px;padding:3px 5px;" onchange="updateDuration(this.value)" />
+          Dur(s):
+          <input type="number" id="durationInput" class="input-num" value="32" min="8" max="300" style="width:50px;padding:3px 5px;" onchange="updateDuration(this.value)" />
         </label>
       </div>
 
       <div class="transport-group">
-        <button type="button" id="btnDefaultMusic" class="btn btn-amber" onclick="loadDefaultDemoAudio(true)" title="Ativar/Recarregar música Swing Jazz inicial">🎷 Swing Jazz</button>
+        <button type="button" id="btnDefaultMusic" class="btn btn-amber" onclick="loadDefaultDemoAudio(true)" title="Ativar/Recarregar música Swing Jazz inicial (115 BPM, Offset 0.430s)">🎷 Swing Jazz</button>
         <button type="button" class="btn" onclick="document.getElementById('audioFileInput').click()">📂 Trocar MP3</button>
         <input type="file" id="audioFileInput" accept="audio/*" hidden onchange="handleAudioUpload(event)" />
-        <label style="font-size:0.73rem;font-weight:700;color:var(--accent-cyan);display:flex;align-items:center;gap:3px;" title="Desloca o início do áudio (positivo = pula silêncio inicial; negativo = atrasa música)">
-          Offset Áudio (s):
-          <input type="number" id="audioOffsetInput" class="input-num" value="0.00" step="0.05" min="-30" max="240" style="width:62px;padding:3px 5px;color:var(--accent-cyan);font-weight:800;" oninput="updateAudioOffset(this.value)" />
+        <label style="font-size:0.73rem;font-weight:700;color:var(--accent-cyan);display:flex;align-items:center;gap:3px;" title="Desloca o início do áudio em segundos (precisão de 1 milissegundo = 0.001s)">
+          Offset (s):
+          <input type="number" id="audioOffsetInput" class="input-num" value="0.430" step="0.001" min="-30" max="240" style="width:68px;padding:3px 5px;color:var(--accent-cyan);font-weight:800;" oninput="updateAudioOffset(this.value)" />
         </label>
-        <button type="button" class="btn" style="padding:4px 7px;" onclick="setAudioOffsetAtPlayhead()" title="Faz o ponto atual do áudio virar o segundo 00:00.0 (Tempo 1)">🎯 1º Tempo Aqui</button>
-        <span id="audioFileName" style="font-size:0.71rem;color:var(--accent-amber);font-weight:700;max-width:115px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🎷 Swing Jazz Demo</span>
-        <select id="speedSelect" class="input-num" style="width:62px;padding:3px 4px;" onchange="updatePlaybackSpeed(this.value)" title="Velocidade de ensaio">
+        <button type="button" class="btn" style="padding:4px 7px;" onclick="setAudioOffsetAtPlayhead()" title="Faz o ponto atual do áudio virar o segundo 00:00.000 (Tempo 1)">🎯 1º Tempo Aqui</button>
+        <span id="audioFileName" style="font-size:0.71rem;color:var(--accent-amber);font-weight:700;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🎷 Swing Jazz Demo</span>
+        <select id="speedSelect" class="input-num" style="width:60px;padding:3px 4px;" onchange="updatePlaybackSpeed(this.value)" title="Velocidade de ensaio">
           <option value="0.5">0.5x</option>
           <option value="0.75">0.75x</option>
           <option value="1" selected>1.0x</option>
@@ -906,8 +917,9 @@
 
       project = {
         title: 'Shim Sham Classic & Canon',
-        bpm: 120,
-        duration: 32,
+        bpm: 115,
+        audioOffset: 0.430,
+        duration: 34,
         dancers,
         cues
       };
@@ -916,6 +928,8 @@
       currentTime = 4.0;
       document.getElementById('bpmInput').value = project.bpm;
       document.getElementById('durationInput').value = project.duration;
+      const offInp = document.getElementById('audioOffsetInput');
+      if (offInp) offInp.value = project.audioOffset.toFixed(3);
       autoCurveAllTransitions(false);
       syncAllUI();
     }
@@ -2034,7 +2048,7 @@
       }
 
       tlDragType = 'scrub';
-      seekTo(clickedT);
+      seekTo(quantizeTimelineTime(clickedT));
       tlCanvas.setPointerCapture(e.pointerId);
     });
 
@@ -2042,7 +2056,7 @@
       if (!tlDragType) return;
       const rect = tlCanvas.getBoundingClientRect();
       const mx = e.clientX - rect.left;
-      const t = Math.round(xToTime(mx, tlCanvas.width) * 4) / 4; // Snap to 0.25s
+      const t = quantizeTimelineTime(xToTime(mx, tlCanvas.width));
 
       if (tlDragType === 'scrub') {
         seekTo(t);
@@ -2229,7 +2243,7 @@
         <div class="cue-item ${idx === activeCueIndex ? 'active' : ''}" onclick="selectCue(${idx})">
           <div class="cue-item-top">
             <span>${c.name}</span>
-            <span style="color:var(--accent-cyan);">${c.startTime.toFixed(1)}s ➔ ${c.arriveTime.toFixed(1)}s</span>
+            <span style="color:var(--accent-cyan);">${c.startTime.toFixed(3)}s ➔ ${c.arriveTime.toFixed(3)}s</span>
           </div>
           <div class="cue-item-sub">
             <span>👞 ${c.step || 'Sem passo definido'}</span>
@@ -2252,8 +2266,8 @@
       if (!c) return;
       document.getElementById('cueNameInput').value = c.name;
       document.getElementById('cueStepInput').value = c.step || '';
-      document.getElementById('cueStartInput').value = c.startTime;
-      document.getElementById('cueArriveInput').value = c.arriveTime;
+      document.getElementById('cueStartInput').value = Number(c.startTime).toFixed(3);
+      document.getElementById('cueArriveInput').value = Number(c.arriveTime).toFixed(3);
     }
 
     function updateActiveCueMeta() {
@@ -2273,17 +2287,39 @@
     function updateActiveCueTiming() {
       const c = project.cues[activeCueIndex];
       if (!c) return;
-      c.startTime = Math.max(0, Number(document.getElementById('cueStartInput').value) || 0);
-      c.arriveTime = Math.max(c.startTime, Number(document.getElementById('cueArriveInput').value) || c.startTime);
+      c.startTime = Math.max(0, Math.round((Number(document.getElementById('cueStartInput').value) || 0) * 1000) / 1000);
+      c.arriveTime = Math.max(c.startTime, Math.round((Number(document.getElementById('cueArriveInput').value) || c.startTime) * 1000) / 1000);
       project.cues.sort((a, b) => a.startTime - b.startTime);
       renderCueList();
+    }
+
+    let snapGridMode = 'ms'; // 'ms' | '16th' | 'triplet' | '8th' | 'beat' | 'eight'
+
+    function updateSnapGridMode(mode) {
+      snapGridMode = mode || 'ms';
+    }
+
+    function quantizeTimelineTime(rawSec) {
+      const clamped = Math.max(0, Math.min(project.duration, rawSec));
+      if (snapGridMode === 'ms') {
+        return Math.round(clamped * 1000) / 1000; // 1 milissegundo (0.001s)
+      }
+      const beatSec = getBeatDuration();
+      let gridSec = beatSec;
+      if (snapGridMode === '16th') gridSec = beatSec / 4;       // Semicolcheia
+      else if (snapGridMode === 'triplet') gridSec = beatSec / 3; // Tercina Swing
+      else if (snapGridMode === '8th') gridSec = beatSec / 2;    // Colcheia
+      else if (snapGridMode === 'beat') gridSec = beatSec;       // Semínima
+      else if (snapGridMode === 'eight') gridSec = beatSec * 8;  // Frase de 8 tempos
+      const snapped = Math.round(clamped / gridSec) * gridSec;
+      return Math.round(Math.max(0, Math.min(project.duration, snapped)) * 1000) / 1000;
     }
 
     function markCueStartNow() {
       const c = project.cues[activeCueIndex];
       if (!c) return;
-      c.startTime = Math.round(currentTime * 4) / 4;
-      if (c.arriveTime < c.startTime) c.arriveTime = c.startTime + 1.0;
+      c.startTime = quantizeTimelineTime(currentTime);
+      if (c.arriveTime < c.startTime) c.arriveTime = Math.round((c.startTime + getBeatDuration() * 2) * 1000) / 1000;
       syncCueInspector();
       renderCueList();
     }
@@ -2291,15 +2327,15 @@
     function markCueArriveNow() {
       const c = project.cues[activeCueIndex];
       if (!c) return;
-      c.arriveTime = Math.max(c.startTime, Math.round(currentTime * 4) / 4);
+      c.arriveTime = Math.max(c.startTime, quantizeTimelineTime(currentTime));
       syncCueInspector();
       renderCueList();
     }
 
     function addCueAtCurrentTime() {
       const st = getStageStateAtTime(currentTime);
-      const startT = Math.round(currentTime * 4) / 4;
-      const arriveT = Math.min(project.duration, startT + 2.0);
+      const startT = quantizeTimelineTime(currentTime);
+      const arriveT = Math.min(project.duration, Math.round((startT + getBeatDuration() * 4) * 1000) / 1000);
       const newPos = {};
       project.dancers.forEach((d) => {
         const cur = st.positions[d.id] || { x: 0, z: 0, angle: 0 };
@@ -2393,15 +2429,15 @@
     }
 
     function updateAudioOffset(val) {
-      project.audioOffset = Math.round((Number(val) || 0) * 100) / 100;
+      project.audioOffset = Math.round((Number(val) || 0) * 1000) / 1000;
       syncAudioElementToTimeline();
     }
 
     function setAudioOffsetAtPlayhead() {
-      // Faz o ponto atual do áudio virar o segundo 00:00.0 (Tempo 1 do Oito 1)
+      // Faz o ponto atual do áudio virar o segundo 00:00.000 (Tempo 1 do Oito 1)
       const curAudioT = getAudioTimeForTimeline(currentTime);
-      project.audioOffset = Math.round(curAudioT * 100) / 100;
-      document.getElementById('audioOffsetInput').value = project.audioOffset.toFixed(2);
+      project.audioOffset = Math.round(curAudioT * 1000) / 1000;
+      document.getElementById('audioOffsetInput').value = project.audioOffset.toFixed(3);
       currentTime = 0;
       syncAudioElementToTimeline();
     }
@@ -2547,6 +2583,11 @@
         audioElement.preload = 'auto';
         document.getElementById('audioFileName').textContent = '🎷 Swing Jazz Demo';
         document.getElementById('btnDefaultMusic').classList.add('btn-amber');
+        // Calibração exata da demonstração Swing Jazz: 115 BPM e Offset 0.430s
+        project.bpm = 115;
+        project.audioOffset = 0.430;
+        document.getElementById('bpmInput').value = 115;
+        document.getElementById('audioOffsetInput').value = '0.430';
         if (userTriggered) {
           metronomeEnabled = false;
           const btnM = document.getElementById('btnMetronome');
@@ -2556,7 +2597,7 @@
         const res = await fetch('./audio/swing-demo.mp3');
         if (res.ok) {
           const arr = await res.arrayBuffer();
-          await decodeArrayBufferToWaveform(arr, false, true);
+          await decodeArrayBufferToWaveform(arr, false, false);
         }
       } catch (e) {}
     }
@@ -2642,7 +2683,7 @@
 
       const fmt = (s) => {
         const m = Math.floor(s / 60);
-        const sec = (s % 60).toFixed(1).padStart(4, '0');
+        const sec = (s % 60).toFixed(3).padStart(6, '0');
         return `${String(m).padStart(2, '0')}:${sec}`;
       };
       document.getElementById('timeReadout').textContent = `${fmt(currentTime)} / ${fmt(project.duration)}`;
