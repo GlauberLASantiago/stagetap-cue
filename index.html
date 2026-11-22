@@ -790,7 +790,70 @@
         </div>
 
         <label class="field-label" style="margin-top:4px;"><span>👞 Passo Individual (Opcional)</span></label>
-        <input type="text" id="inspCustomStep" class="input-text" placeholder="Ex: Solo Pullback / Wings..." oninput="updateSelectedDancerStep(this.value)" />
+        <div style="display:flex;gap:4px;">
+          <input type="text" id="inspCustomStep" list="tapStepsDatalist" class="input-text" placeholder="Ex: Solo Pullback / Wings..." oninput="updateSelectedDancerStep(this.value)" />
+          <select class="input-num" style="width:110px;" onchange="if(this.value){setIndividualStepQuick(this.value);this.value='';}" title="Adicionar passo da lista ao dançarino selecionado">
+            <option value="">+ Passo...</option>
+            <optgroup label="Fundamentos">
+              <option value="Shuffle">Shuffle</option>
+              <option value="Flap">Flap</option>
+              <option value="Flap Heel">Flap Heel</option>
+              <option value="Ball Change">Ball Change</option>
+              <option value="Shuffle Ball Change">Shuffle Ball Change</option>
+              <option value="Shuffle Hop Step">Shuffle Hop Step</option>
+              <option value="Step Heel">Step Heel</option>
+              <option value="Scuff">Scuff</option>
+              <option value="Stamp / Stomp">Stamp / Stomp</option>
+              <option value="Chug">Chug</option>
+            </optgroup>
+            <optgroup label="Clássicos &amp; Deslocamentos">
+              <option value="Time Step">Time Step</option>
+              <option value="Time Step Duplo">Time Step Duplo</option>
+              <option value="Time Step Triplo">Time Step Triplo</option>
+              <option value="Traveling Time Step">Traveling Time Step</option>
+              <option value="Buffalo">Buffalo</option>
+              <option value="Maxie Ford">Maxie Ford</option>
+              <option value="Irish">Irish</option>
+              <option value="Waltz Clog">Waltz Clog</option>
+              <option value="Cincinnati">Cincinnati</option>
+              <option value="Drawback">Drawback</option>
+              <option value="Essence / Soft Shoe">Essence / Soft Shoe</option>
+              <option value="Bombershay">Bombershay</option>
+              <option value="Falling Off the Log">Falling Off the Log</option>
+              <option value="Suzy Q">Suzy Q</option>
+              <option value="Grapevine">Grapevine</option>
+            </optgroup>
+            <optgroup label="Rhythm Tap &amp; Rudimentos">
+              <option value="Cramp Roll">Cramp Roll</option>
+              <option value="Flap Cramp Roll">Flap Cramp Roll</option>
+              <option value="Paddle &amp; Roll">Paddle &amp; Roll</option>
+              <option value="Paradiddle">Paradiddle</option>
+              <option value="Riff (3-Beat / 4-Beat)">Riff (3-Beat / 4-Beat)</option>
+              <option value="Riff Walk">Riff Walk</option>
+              <option value="Riffle">Riffle</option>
+            </optgroup>
+            <optgroup label="Virtuosismo &amp; Flash">
+              <option value="Pullback">Pullback</option>
+              <option value="Double Pullback">Double Pullback</option>
+              <option value="Wings">Wings</option>
+              <option value="Single Wing">Single Wing</option>
+              <option value="Pendulum Wing">Pendulum Wing</option>
+              <option value="Over the Top">Over the Top</option>
+              <option value="Trenches">Trenches</option>
+              <option value="Toe Stand">Toe Stand</option>
+              <option value="Slide / Glide">Slide / Glide</option>
+              <option value="Heel Clicks (Bells)">Heel Clicks (Bells)</option>
+            </optgroup>
+            <optgroup label="Repertório &amp; Desafios">
+              <option value="Shim Sham">Shim Sham</option>
+              <option value="Tacky Annie">Tacky Annie</option>
+              <option value="Half Break / Full Break">Half Break / Full Break</option>
+              <option value="BS Chorus">BS Chorus</option>
+              <option value="Coles Stroll">Coles Stroll</option>
+              <option value="Solo / Improviso (Hoofing)">Solo / Improviso (Hoofing)</option>
+            </optgroup>
+          </select>
+        </div>
       </div>
     </aside>
 
@@ -872,20 +935,181 @@
         <label class="field-label"><span>Nome da Formação / Trecho</span></label>
         <input type="text" id="cueNameInput" class="input-text" oninput="updateActiveCueMeta()" />
 
-        <label class="field-label"><span>👞 Passo de Sapateado (Legenda no Palco)</span></label>
-        <input type="text" id="cueStepInput" class="input-text" placeholder="Ex: Shim Sham, Time Step, Buffalo..." oninput="updateActiveCueMeta()" />
+        <label class="field-label">
+          <span>👞 Passo de Sapateado (Legenda no Palco)</span>
+          <button type="button" class="btn" style="padding:1px 6px;font-size:0.65rem;" onclick="clearCueStep()" title="Limpar campo de passo">✕ Limpar</button>
+        </label>
+        <input type="text" id="cueStepInput" list="tapStepsDatalist" class="input-text" placeholder="Ex: Shim Sham, Time Step, Buffalo..." oninput="updateActiveCueMeta()" />
 
-        <div class="chip-grid">
+        <div style="display:flex;gap:5px;align-items:center;margin-top:2px;">
+          <select id="cueStepLibrarySelect" class="input-num" style="flex:1;" onchange="if(this.value){setCueStepQuick(this.value);this.value='';}">
+            <option value="">📚 Biblioteca Completa de Passos (+55 passos)...</option>
+            <optgroup label="1. Fundamentos &amp; Batidas Básicas">
+              <option value="Shuffle">Shuffle (Brush + Spank)</option>
+              <option value="Flap">Flap (Brush + Step)</option>
+              <option value="Flap Heel">Flap Heel</option>
+              <option value="Ball Change">Ball Change</option>
+              <option value="Shuffle Ball Change">Shuffle Ball Change</option>
+              <option value="Shuffle Hop Step">Shuffle Hop Step</option>
+              <option value="Step Heel">Step Heel</option>
+              <option value="Dig Heel / Toe Heel">Dig Heel / Toe Heel</option>
+              <option value="Brush &amp; Spank">Brush &amp; Spank</option>
+              <option value="Scuff">Scuff (Calcanhar p/ Frente)</option>
+              <option value="Stamp / Stomp">Stamp / Stomp</option>
+              <option value="Hop &amp; Leap">Hop &amp; Leap</option>
+              <option value="Chug">Chug (Deslize c/ Calcanhar)</option>
+              <option value="Slap">Slap</option>
+            </optgroup>
+            <optgroup label="2. Clássicos &amp; Deslocamentos">
+              <option value="Time Step (Simples)">Time Step (Simples)</option>
+              <option value="Time Step (Duplo)">Time Step (Duplo)</option>
+              <option value="Time Step (Triplo)">Time Step (Triplo)</option>
+              <option value="Traveling Time Step">Traveling Time Step</option>
+              <option value="Military Time Step">Military Time Step</option>
+              <option value="Buffalo">Buffalo</option>
+              <option value="Double Buffalo">Double Buffalo</option>
+              <option value="Maxie Ford">Maxie Ford</option>
+              <option value="Irish">Irish (Shuffle Hop Cross)</option>
+              <option value="Waltz Clog">Waltz Clog (3/4)</option>
+              <option value="Cincinnati">Cincinnati</option>
+              <option value="Drawback">Drawback</option>
+              <option value="Essence (Soft Shoe)">Essence (Soft Shoe)</option>
+              <option value="Back Essence">Back Essence</option>
+              <option value="Bombershay">Bombershay</option>
+              <option value="Falling Off the Log">Falling Off the Log</option>
+              <option value="Suzy Q">Suzy Q</option>
+              <option value="Grapevine">Grapevine</option>
+            </optgroup>
+            <optgroup label="3. Rhythm Tap &amp; Rudimentos">
+              <option value="Cramp Roll">Cramp Roll</option>
+              <option value="Double Cramp Roll">Double Cramp Roll</option>
+              <option value="Flap Cramp Roll">Flap Cramp Roll</option>
+              <option value="Paddle &amp; Roll">Paddle &amp; Roll</option>
+              <option value="Paradiddle">Paradiddle</option>
+              <option value="Double Paradiddle">Double Paradiddle</option>
+              <option value="3-Beat Riff">3-Beat Riff</option>
+              <option value="4-Beat Riff">4-Beat Riff</option>
+              <option value="Riff Walk">Riff Walk</option>
+              <option value="Riffle">Riffle</option>
+              <option value="Tac-a-Tac">Tac-a-Tac</option>
+            </optgroup>
+            <optgroup label="4. Virtuosismo, Aéreos &amp; Flash">
+              <option value="Pullback">Pullback (Pickups)</option>
+              <option value="Double Pullback">Double Pullback</option>
+              <option value="Alternating Pullback">Alternating Pullback</option>
+              <option value="Wings (Duplo)">Wings (Duplo)</option>
+              <option value="Single Wing">Single Wing</option>
+              <option value="Pendulum Wing">Pendulum Wing</option>
+              <option value="Swap Wing">Swap Wing</option>
+              <option value="Over the Top">Over the Top</option>
+              <option value="Trenches">Trenches</option>
+              <option value="Toe Stand">Toe Stand (Ponta)</option>
+              <option value="Slide / Glide">Slide / Glide</option>
+              <option value="Bell Clicks (Heel Clicks)">Bell Clicks (Heel Clicks)</option>
+            </optgroup>
+            <optgroup label="5. Repertório Tradicional &amp; Cenas">
+              <option value="Shim Sham">Shim Sham (Chorus)</option>
+              <option value="Tacky Annie">Tacky Annie</option>
+              <option value="Half Break">Half Break</option>
+              <option value="Full Break">Full Break</option>
+              <option value="Freeze &amp; Break">Freeze &amp; Break</option>
+              <option value="BS Chorus">BS Chorus</option>
+              <option value="Coles Stroll">Coles Stroll</option>
+              <option value="Bojangles Stair Step">Bojangles Stair Step</option>
+              <option value="Desafio (Trading Fours)">Desafio (Trading Fours)</option>
+              <option value="Improviso / Solo (Hoofing)">Improviso / Solo (Hoofing)</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div class="chip-grid" style="max-height:112px;overflow-y:auto;padding-right:2px;">
           <button type="button" class="chip" onclick="setCueStepQuick('Time Step')">Time Step</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Time Step Duplo')">TS Duplo</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Time Step Triplo')">TS Triplo</button>
           <button type="button" class="chip" onclick="setCueStepQuick('Shim Sham')">Shim Sham</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Tacky Annie')">Tacky Annie</button>
           <button type="button" class="chip" onclick="setCueStepQuick('Buffalo')">Buffalo</button>
           <button type="button" class="chip" onclick="setCueStepQuick('Maxie Ford')">Maxie Ford</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Irish')">Irish</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Waltz Clog')">Waltz Clog</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Cincinnati')">Cincinnati</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Drawback')">Drawback</button>
           <button type="button" class="chip" onclick="setCueStepQuick('Cramp Roll')">Cramp Roll</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Paddle & Roll')">Paddle &amp; Roll</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Paradiddle')">Paradiddle</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Riff Walk')">Riff Walk</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Riffle')">Riffle</button>
           <button type="button" class="chip" onclick="setCueStepQuick('Pullback')">Pullback</button>
           <button type="button" class="chip" onclick="setCueStepQuick('Wings')">Wings</button>
-          <button type="button" class="chip" onclick="setCueStepQuick('Paddle & Roll')">Paddle &amp; Roll</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Single Wing')">Single Wing</button>
           <button type="button" class="chip" onclick="setCueStepQuick('Over the Top')">Over the Top</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Trenches')">Trenches</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Essence / Soft Shoe')">Soft Shoe</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Bombershay')">Bombershay</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Falling Off the Log')">Falling Off Log</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Suzy Q')">Suzy Q</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Grapevine')">Grapevine</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Shuffle Ball Change')">Shuffle Ball Change</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Flap Heel')">Flap Heel</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Toe Stand')">Toe Stand</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Slide / Glide')">Slide / Glide</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Half Break')">Half Break</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Full Break')">Full Break</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('BS Chorus')">BS Chorus</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Desafio (Trading Fours)')">Trading Fours</button>
         </div>
+
+        <datalist id="tapStepsDatalist">
+          <option value="Time Step (Simples)"></option>
+          <option value="Time Step (Duplo)"></option>
+          <option value="Time Step (Triplo)"></option>
+          <option value="Traveling Time Step"></option>
+          <option value="Shim Sham"></option>
+          <option value="Tacky Annie"></option>
+          <option value="Buffalo"></option>
+          <option value="Maxie Ford"></option>
+          <option value="Irish"></option>
+          <option value="Waltz Clog"></option>
+          <option value="Cincinnati"></option>
+          <option value="Drawback"></option>
+          <option value="Cramp Roll"></option>
+          <option value="Paddle &amp; Roll"></option>
+          <option value="Paradiddle"></option>
+          <option value="3-Beat Riff"></option>
+          <option value="4-Beat Riff"></option>
+          <option value="Riff Walk"></option>
+          <option value="Riffle"></option>
+          <option value="Pullback"></option>
+          <option value="Double Pullback"></option>
+          <option value="Wings"></option>
+          <option value="Single Wing"></option>
+          <option value="Pendulum Wing"></option>
+          <option value="Over the Top"></option>
+          <option value="Trenches"></option>
+          <option value="Toe Stand"></option>
+          <option value="Slide / Glide"></option>
+          <option value="Bell Clicks (Heel Clicks)"></option>
+          <option value="Essence (Soft Shoe)"></option>
+          <option value="Back Essence"></option>
+          <option value="Bombershay"></option>
+          <option value="Falling Off the Log"></option>
+          <option value="Suzy Q"></option>
+          <option value="Grapevine"></option>
+          <option value="Shuffle Ball Change"></option>
+          <option value="Shuffle Hop Step"></option>
+          <option value="Flap Heel"></option>
+          <option value="Step Heel"></option>
+          <option value="Chug"></option>
+          <option value="Scuff"></option>
+          <option value="Stamp / Stomp"></option>
+          <option value="Half Break"></option>
+          <option value="Full Break"></option>
+          <option value="Freeze &amp; Break"></option>
+          <option value="BS Chorus"></option>
+          <option value="Coles Stroll"></option>
+          <option value="Desafio (Trading Fours)"></option>
+          <option value="Improviso / Solo (Hoofing)"></option>
+        </datalist>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px;">
           <div>
@@ -3766,6 +3990,19 @@
       const inp = document.getElementById('cueStepInput');
       inp.value = inp.value ? `${inp.value} + ${stepName}` : stepName;
       updateActiveCueMeta();
+    }
+
+    function clearCueStep() {
+      const inp = document.getElementById('cueStepInput');
+      if (inp) inp.value = '';
+      updateActiveCueMeta();
+    }
+
+    function setIndividualStepQuick(stepName) {
+      const inp = document.getElementById('inspCustomStep');
+      if (!inp) return;
+      inp.value = inp.value ? `${inp.value} + ${stepName}` : stepName;
+      updateSelectedDancerStep(inp.value);
     }
 
     function updateActiveCueTiming() {
