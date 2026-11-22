@@ -712,7 +712,7 @@
       </div>
 
       <div class="transport-group">
-        <button type="button" id="btnMetronome" class="btn btn-amber" onclick="toggleMetronome()">🔔 Metrônomo: ON</button>
+        <button type="button" id="btnMetronome" class="btn" onclick="toggleMetronome()">🔔 Metrônomo: OFF</button>
         <label style="font-size:0.74rem;font-weight:700;color:var(--text-sub);display:flex;align-items:center;gap:4px;">
           BPM:
           <input type="number" id="bpmInput" class="input-num" value="120" min="50" max="220" style="width:58px;padding:3px 6px;" onchange="updateBpm(this.value)" />
@@ -724,9 +724,10 @@
       </div>
 
       <div class="transport-group">
-        <button type="button" class="btn" onclick="document.getElementById('audioFileInput').click()">🎵 Carregar Áudio (MP3/WAV)</button>
+        <button type="button" id="btnDefaultMusic" class="btn btn-amber" onclick="loadDefaultDemoAudio(true)" title="Ativar/Recarregar música Swing Jazz inicial">🎷 Swing Jazz (Inicial)</button>
+        <button type="button" class="btn" onclick="document.getElementById('audioFileInput').click()">📂 Trocar MP3/WAV</button>
         <input type="file" id="audioFileInput" accept="audio/*" hidden onchange="handleAudioUpload(event)" />
-        <span id="audioFileName" style="font-size:0.72rem;color:var(--text-muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Sem áudio externo</span>
+        <span id="audioFileName" style="font-size:0.72rem;color:var(--accent-amber);font-weight:700;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🎷 Swing Jazz Demo</span>
         <select id="speedSelect" class="input-num" style="width:68px;padding:3px 5px;" onchange="updatePlaybackSpeed(this.value)" title="Velocidade de ensaio">
           <option value="0.5">0.5x</option>
           <option value="0.75">0.75x</option>
@@ -2342,25 +2343,20 @@
       if (audioElement) audioElement.playbackRate = playbackSpeed;
     }
 
-    async function handleAudioUpload(e) {
-      const file = e.target.files && e.target.files[0];
-      if (!file) return;
-      document.getElementById('audioFileName').textContent = file.name;
-      if (audioObjectUrl) URL.revokeObjectURL(audioObjectUrl);
-      audioObjectUrl = URL.createObjectURL(file);
-      audioElement = new Audio(audioObjectUrl);
-
-      ensureAudioCtx();
-      if (audioCtx) {
-        const arr = await file.arrayBuffer();
+    async function decodeArrayBufferToWaveform(arr, adjustDuration = false) {
+      try {
+        ensureAudioCtx();
+        if (!audioCtx) return;
         audioBuffer = await audioCtx.decodeAudioData(arr);
-        project.duration = Math.ceil(audioBuffer.duration);
-        document.getElementById('durationInput').value = project.duration;
-
-        // Compute 240 waveform peaks
+        if (adjustDuration) {
+          project.duration = Math.ceil(audioBuffer.duration);
+          document.getElementById('durationInput').value = project.duration;
+        }
+        // Compute 240 waveform peaks covering project.duration
         const raw = audioBuffer.getChannelData(0);
+        const sampleLimit = Math.min(raw.length, Math.floor(project.duration * audioBuffer.sampleRate));
         const bins = 240;
-        const step = Math.floor(raw.length / bins);
+        const step = Math.max(1, Math.floor(sampleLimit / bins));
         waveformPeaks = [];
         for (let i = 0; i < bins; i++) {
           let max = 0;
@@ -2370,7 +2366,41 @@
           }
           waveformPeaks.push(max);
         }
-      }
+      } catch (err) {}
+    }
+
+    async function loadDefaultDemoAudio(userTriggered = false) {
+      try {
+        if (audioElement) audioElement.pause();
+        audioElement = new Audio('./audio/swing-demo.mp3');
+        audioElement.preload = 'auto';
+        document.getElementById('audioFileName').textContent = '🎷 Swing Jazz Demo';
+        document.getElementById('btnDefaultMusic').classList.add('btn-amber');
+        if (userTriggered) {
+          metronomeEnabled = false;
+          const btnM = document.getElementById('btnMetronome');
+          btnM.textContent = '🔔 Metrônomo: OFF';
+          btnM.classList.remove('btn-amber');
+        }
+        const res = await fetch('./audio/swing-demo.mp3');
+        if (res.ok) {
+          const arr = await res.arrayBuffer();
+          await decodeArrayBufferToWaveform(arr, false);
+        }
+      } catch (e) {}
+    }
+
+    async function handleAudioUpload(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      document.getElementById('audioFileName').textContent = file.name;
+      document.getElementById('btnDefaultMusic').classList.remove('btn-amber');
+      if (audioElement) audioElement.pause();
+      if (audioObjectUrl) URL.revokeObjectURL(audioObjectUrl);
+      audioObjectUrl = URL.createObjectURL(file);
+      audioElement = new Audio(audioObjectUrl);
+      const arr = await file.arrayBuffer();
+      await decodeArrayBufferToWaveform(arr, true);
     }
 
     function exportProjectJson() {
@@ -2493,7 +2523,9 @@
       });
     }
 
+    metronomeEnabled = false;
     loadDemoChoreography();
+    loadDefaultDemoAudio(false);
     requestAnimationFrame(mainLoop);
   </script>
 </body>

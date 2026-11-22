@@ -1,8 +1,9 @@
-const CACHE_NAME = 'stagetap-cue-v2';
+const CACHE_NAME = 'stagetap-cue-v3';
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.json',
+  './audio/swing-demo.mp3',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-maskable-192.png',
