@@ -647,8 +647,8 @@
     </div>
 
     <div class="view-switcher">
-      <button type="button" id="btnView2D" class="view-btn active" onclick="setViewMode('2d')" title="Atalho: Tecla V">🗺️ Mapa 2D (Ortogonal)</button>
-      <button type="button" id="btnView3D" class="view-btn" onclick="setViewMode('3d')" title="Atalho: Tecla V">🎥 Palco 3D (Câmeras Móveis)</button>
+      <button type="button" id="btnView2D" class="view-btn" onclick="setViewMode('2d')" title="Atalho: Tecla V">🗺️ Mapa 2D (Ortogonal)</button>
+      <button type="button" id="btnView3D" class="view-btn active" onclick="setViewMode('3d')" title="Atalho: Tecla V">🎥 Palco 3D (Câmeras Móveis)</button>
     </div>
 
     <div class="topbar-actions">
@@ -891,10 +891,23 @@
       </div>
 
       <!-- 2D Canvas -->
-      <canvas id="canvas2d"></canvas>
+      <canvas id="canvas2d" style="display:none;"></canvas>
 
       <!-- 3D Three.js Container -->
-      <div id="container3d"></div>
+      <div id="container3d" style="display:block;"></div>
+
+      <!-- Barra Flutuante de Edição Direta no Palco 3D (aparece ao dar duplo clique em um dançarino no 3D) -->
+      <div id="edit3dFloatingBar" style="display:none;position:absolute;top:62px;left:50%;transform:translateX(-50%);z-index:30;background:rgba(15,29,35,0.94);border:1.5px solid var(--accent-amber);border-radius:12px;padding:7px 14px;box-shadow:0 12px 32px rgba(0,0,0,0.65);align-items:center;gap:10px;flex-wrap:wrap;pointer-events:auto;">
+        <span style="font-size:0.76rem;font-weight:800;color:var(--accent-amber);">🎯 Editando 3D: <strong id="edit3dDancerName" style="color:#fff;">A - Ana</strong></span>
+        <span style="font-size:0.7rem;color:#cbd5e1;">Arraste o corpo/disco p/ <strong>Mover</strong> • Arraste a esfera dourada (ou Shift) p/ <strong>Girar Direção</strong></span>
+        <div style="display:inline-flex;align-items:center;gap:4px;">
+          <button type="button" class="chip" onclick="updateSelectedDancerAngle(0)">↓ 0°</button>
+          <button type="button" class="chip" onclick="updateSelectedDancerAngle(180)">↑ 180°</button>
+          <button type="button" class="chip" onclick="updateSelectedDancerAngle(-90)">← -90°</button>
+          <button type="button" class="chip" onclick="updateSelectedDancerAngle(90)">→ +90°</button>
+        </div>
+        <button type="button" class="btn btn-primary" style="padding:3px 9px;font-size:0.7rem;" onclick="setEditing3DDancer(null)">✓ Concluir (Esc)</button>
+      </div>
 
       <!-- Bottom HUD: Step Banner & 3D Camera Presets -->
       <div class="stage-hud-bottom">
@@ -1345,7 +1358,7 @@
       cues: []
     };
 
-    let viewMode = '2d'; // '2d' | '3d'
+    let viewMode = '3d'; // '2d' | '3d' (3D como opção inicial padrão)
     let activeCueIndex = 0;
     let liveCueCursorIdx = 1; // Índice da próxima marca que será ajustada pela tecla 'A' / botão
     let liveEightCursor = 1;  // Oito cujo término (início do próximo Oito) será ajustado junto com a tecla 'A'
@@ -1353,6 +1366,8 @@
     let prev3DCamPreset = 'audience';   // Câmera 3D normal anterior ao modo POV
     let prevViewModeBeforePOV = null;   // Guarda se o usuário estava em '2d' ou '3d' antes de clicar no olho
     let povDancerId = 'd1';   // Dançarino cujos olhos são a câmera 3D no modo 'pov'
+    let editing3DDancerId = null; // Dançarino em modo de edição 3D (ativado com duplo clique no 3D)
+    let dragMode3D = null;        // 'move' | 'rotate' | null
     let selectedDancerId = 'd1';
     let currentTime = 0;
     let isPlaying = false;
@@ -2595,6 +2610,106 @@
     let audienceSpectators3d = [];
     let dancerMeshes3d = {};
     let pathLines3d = {};
+    let editGizmo3d = null;
+    let moveDiscMesh3d = null;
+    let rotateKnobMesh3d = null;
+    const raycaster3d = new THREE.Raycaster();
+    const floorPlane3d = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+
+    function setEditing3DDancer(dancerId) {
+      editing3DDancerId = dancerId || null;
+      dragMode3D = null;
+      if (editing3DDancerId) {
+        if (isPlaying) togglePlay();
+        selectedDancerId = editing3DDancerId;
+        syncDancerInspector();
+        renderDancerList();
+      }
+      const bar = document.getElementById('edit3dFloatingBar');
+      if (bar) {
+        if (editing3DDancerId && viewMode === '3d') {
+          const d = project.dancers.find((x) => x.id === editing3DDancerId);
+          const nameEl = document.getElementById('edit3dDancerName');
+          if (nameEl && d) nameEl.textContent = d.name;
+          bar.style.display = 'flex';
+        } else {
+          bar.style.display = 'none';
+        }
+      }
+      if (editGizmo3d) {
+        editGizmo3d.visible = Boolean(editing3DDancerId && !isPlaying);
+      }
+    }
+
+    function buildEditGizmo3D() {
+      if (!scene3d) return;
+      if (editGizmo3d) scene3d.remove(editGizmo3d);
+
+      editGizmo3d = new THREE.Group();
+      editGizmo3d.visible = false;
+
+      // 1. Disco translúcido no chão para arrastar a posição (X, Z)
+      const discGeo = new THREE.CylinderGeometry(0.62, 0.62, 0.03, 32);
+      const discMat = new THREE.MeshBasicMaterial({ color: 0x2A9D8F, transparent: true, opacity: 0.35 });
+      moveDiscMesh3d = new THREE.Mesh(discGeo, discMat);
+      moveDiscMesh3d.position.y = 0.025;
+      editGizmo3d.add(moveDiscMesh3d);
+
+      // Anel externo ciano/dourado de seleção e rotação
+      const ringGeo = new THREE.RingGeometry(0.60, 0.68, 36);
+      const ringMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide });
+      const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+      ringMesh.rotation.x = -Math.PI / 2;
+      ringMesh.position.y = 0.045;
+      editGizmo3d.add(ringMesh);
+
+      const outerRingGeo = new THREE.RingGeometry(0.92, 0.98, 40);
+      const outerRingMat = new THREE.MeshBasicMaterial({ color: 0xfbbf24, side: THREE.DoubleSide });
+      const outerRingMesh = new THREE.Mesh(outerRingGeo, outerRingMat);
+      outerRingMesh.rotation.x = -Math.PI / 2;
+      outerRingMesh.position.y = 0.045;
+      editGizmo3d.add(outerRingMesh);
+
+      // 2. Haste + Esfera Dourada Frontal (+Z local) para girar a direção (angle) do dançarino
+      const stemGeo = new THREE.BoxGeometry(0.06, 0.04, 0.42);
+      const stemMat = new THREE.MeshBasicMaterial({ color: 0xfbbf24 });
+      const stemMesh = new THREE.Mesh(stemGeo, stemMat);
+      stemMesh.position.set(0, 0.07, 0.78);
+      editGizmo3d.add(stemMesh);
+
+      const knobGeo = new THREE.SphereGeometry(0.16, 18, 18);
+      const knobMat = new THREE.MeshBasicMaterial({ color: 0xfbbf24 });
+      rotateKnobMesh3d = new THREE.Mesh(knobGeo, knobMat);
+      rotateKnobMesh3d.position.set(0, 0.12, 0.98);
+      editGizmo3d.add(rotateKnobMesh3d);
+
+      scene3d.add(editGizmo3d);
+    }
+
+    function get3DMouseRay(e) {
+      const rect = renderer3d.domElement.getBoundingClientRect();
+      const ndcX = ((e.clientX - rect.left) / Math.max(1, rect.width)) * 2 - 1;
+      const ndcY = -((e.clientY - rect.top) / Math.max(1, rect.height)) * 2 + 1;
+      raycaster3d.setFromCamera({ x: ndcX, y: ndcY }, camera3d);
+      return raycaster3d;
+    }
+
+    function pickDancerIdAtEvent3D(e) {
+      const ray = get3DMouseRay(e);
+      const dancerIds = Object.keys(dancerMeshes3d);
+      let bestId = null;
+      let bestDist = Infinity;
+      for (const id of dancerIds) {
+        const grp = dancerMeshes3d[id];
+        if (!grp || !grp.visible) continue;
+        const hits = ray.intersectObject(grp, true);
+        if (hits.length > 0 && hits[0].distance < bestDist) {
+          bestDist = hits[0].distance;
+          bestId = id;
+        }
+      }
+      return bestId;
+    }
 
     function build3DFloorTexture(wM, dM, mode) {
       const c = document.createElement('canvas');
@@ -2811,6 +2926,91 @@
       scene3d.add(dirLight);
 
       rebuild3DStageEnvironment();
+      buildEditGizmo3D();
+
+      // Duplo clique em um dançarino no Palco 3D ativa/desativa a edição direta de localização e direção
+      const domEl = renderer3d.domElement;
+      domEl.addEventListener('dblclick', (e) => {
+        const hitId = pickDancerIdAtEvent3D(e);
+        if (hitId) {
+          if (editing3DDancerId === hitId) {
+            setEditing3DDancer(null);
+          } else {
+            setEditing3DDancer(hitId);
+          }
+        } else if (editing3DDancerId) {
+          setEditing3DDancer(null);
+        }
+      });
+
+      domEl.addEventListener('pointerdown', (e) => {
+        if (!editing3DDancerId || isPlaying) return;
+        const ray = get3DMouseRay(e);
+
+        // 1. Verifica clique na esfera dourada de rotação de direção (ou Shift + clique no boneco)
+        if (rotateKnobMesh3d && editGizmo3d && editGizmo3d.visible) {
+          const knobHits = ray.intersectObject(rotateKnobMesh3d, true);
+          if (knobHits.length > 0) {
+            dragMode3D = 'rotate';
+            if (controls3d) controls3d.enabled = false;
+            domEl.setPointerCapture(e.pointerId);
+            e.stopPropagation();
+            return;
+          }
+        }
+
+        // 2. Verifica clique no próprio boneco em edição ou no disco de chão para mover (ou girar se Shift estiver pressionado)
+        const targetGrp = dancerMeshes3d[editing3DDancerId];
+        const bodyHits = targetGrp ? ray.intersectObject(targetGrp, true) : [];
+        const discHits = (moveDiscMesh3d && editGizmo3d && editGizmo3d.visible) ? ray.intersectObject(moveDiscMesh3d, true) : [];
+        if (bodyHits.length > 0 || discHits.length > 0) {
+          dragMode3D = e.shiftKey ? 'rotate' : 'move';
+          if (controls3d) controls3d.enabled = false;
+          domEl.setPointerCapture(e.pointerId);
+          e.stopPropagation();
+        }
+      });
+
+      domEl.addEventListener('pointermove', (e) => {
+        if (!dragMode3D || !editing3DDancerId) return;
+        const editCue = project.cues[activeCueIndex];
+        if (!editCue || !editCue.positions[editing3DDancerId]) return;
+        const pos = editCue.positions[editing3DDancerId];
+
+        const ray = get3DMouseRay(e);
+        const hitPt = new THREE.Vector3();
+        if (!ray.ray.intersectPlane(floorPlane3d, hitPt)) return;
+
+        const halfW = (Math.max(3, Number(project.stageWidthM) || 10)) / 2;
+        const halfD = (Math.max(3, Number(project.stageDepthM) || 7)) / 2;
+
+        if (dragMode3D === 'move') {
+          pos.x = Math.round(Math.max(-1.35, Math.min(1.35, hitPt.x / halfW)) * 100) / 100;
+          pos.z = Math.round(Math.max(-0.92, Math.min(0.92, hitPt.z / halfD)) * 100) / 100;
+          enforceFormationSeparation(editCue.positions, editing3DDancerId);
+          pos.x = Math.round(pos.x * 100) / 100;
+          pos.z = Math.round(pos.z * 100) / 100;
+          autoCurveAllTransitions(false);
+        } else if (dragMode3D === 'rotate') {
+          const dancerWX = pos.x * halfW;
+          const dancerWZ = pos.z * halfD;
+          const dx = hitPt.x - dancerWX;
+          const dz = hitPt.z - dancerWZ;
+          let deg = (Math.atan2(dx, dz) * 180) / Math.PI;
+          const step = e.altKey ? 1 : 15;
+          pos.angle = Math.round(deg / step) * step;
+          syncDancerInspector();
+        }
+      });
+
+      domEl.addEventListener('pointerup', () => {
+        if (dragMode3D) {
+          dragMode3D = null;
+          if (controls3d && active3DCamPreset !== 'pov') {
+            controls3d.enabled = true;
+          }
+        }
+      });
     }
 
     function makeLabelSprite(code, name, color) {
@@ -3328,6 +3528,18 @@
         });
       }
 
+      // Posiciona o Gizmo de Edição 3D sob o dançarino que recebeu duplo clique
+      if (editGizmo3d) {
+        if (editing3DDancerId && !isPlaying && renderPositions[editing3DDancerId]) {
+          const ep = renderPositions[editing3DDancerId];
+          editGizmo3d.visible = true;
+          editGizmo3d.position.set(ep.x * halfW, 0, ep.z * halfD);
+          editGizmo3d.rotation.y = ((ep.angle || 0) * Math.PI) / 180;
+        } else {
+          editGizmo3d.visible = false;
+        }
+      }
+
       // Câmera em 1ª Pessoa ("Olhos do Dançarino")
       if (active3DCamPreset === 'pov') {
         const povPos = renderPositions[povDancerId] || renderPositions[selectedDancerId] || { x: 0, z: 0, angle: 0 };
@@ -3359,6 +3571,9 @@
       document.getElementById('canvas2d').style.display = mode === '2d' ? 'block' : 'none';
       document.getElementById('container3d').style.display = mode === '3d' ? 'block' : 'none';
       document.getElementById('camBar').classList.toggle('visible', mode === '3d');
+      if (mode !== '3d') {
+        setEditing3DDancer(null);
+      }
       if (mode === '3d') {
         init3DStage();
         rebuild3DDancers();
@@ -4958,6 +5173,7 @@
 
       if (e.code === 'Escape') {
         toggleShortcutsModal(false);
+        setEditing3DDancer(null);
         return;
       }
 
@@ -5056,6 +5272,7 @@
 
     metronomeEnabled = false;
     loadDemoChoreography();
+    setViewMode('3d');
     loadDefaultDemoAudio(false);
     requestAnimationFrame(mainLoop);
   </script>
