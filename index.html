@@ -1253,9 +1253,9 @@
       </div>
 
       <div class="transport-group">
-        <button type="button" id="btnDefaultMusic" class="btn btn-amber" onclick="loadDefaultDemoAudio(true)" title="Ativar/Recarregar música Swing Jazz inicial (115 BPM, Offset 0.430s)">🎷 Swing Jazz</button>
-        <button type="button" class="btn" onclick="document.getElementById('audioFileInput').click()">📂 Trocar MP3</button>
-        <input type="file" id="audioFileInput" accept="audio/*" hidden onchange="handleAudioUpload(event)" />
+        <button type="button" id="btnDefaultMusic" class="btn btn-amber" onclick="loadDefaultDemoAudio(true)" title="Ativar/Recarregar música Swing Jazz inicial com mapa de 40 Oitos calibrados">🎷 Swing Jazz</button>
+        <button type="button" class="btn" onclick="document.getElementById('audioFileInput').click()" title="Importar áudio (.mp3, .wav, .m4a, .ogg) ou extrair áudio de vídeo (.mp4, .mov, .webm, .mkv)">📂 Importar MP3 / Vídeo</button>
+        <input type="file" id="audioFileInput" accept="audio/*,video/*,.mp3,.wav,.m4a,.ogg,.aac,.flac,.mp4,.webm,.mov,.mkv,.avi,.m4v" hidden onchange="handleAudioUpload(event)" />
         <label style="font-size:0.71rem;font-weight:700;color:var(--text-sub);display:flex;align-items:center;gap:3px;" title="Volume do Áudio / Música">
           🔊:
           <input type="range" id="audioVolRange" min="0" max="1" step="0.05" value="0.85" style="width:52px;" oninput="updateAudioVolume(this.value)" />
@@ -1455,7 +1455,7 @@
     }
 
     // =========================================================================
-    // 2. COREOGRAFIA DEMO INICIAL (6 SAPATEADORES, 5 CUES COM COXIAS, CURVAS E CÂNONE)
+    // 2. COREOGRAFIA DEMO COMPLETA (6 SAPATEADORES, 18 CUES AO LONGO DOS 40 OITOS CALIBRADOS — 175s)
     // =========================================================================
     function loadDemoChoreography() {
       isPlaying = false;
@@ -1469,110 +1469,372 @@
         { id: 'd6', code: 'F', name: 'F - Fê', color: DANCER_COLORS[5] }
       ];
 
-      // Em 115 BPM: 1 tempo (beat) = 60/115 = 0.521739s | 1 Oito (8 tempos) = 4.173913s
-      const B = 60 / 115;
-      const OITO = B * 8; // 4.173913s
-      const roundMs = (v) => Math.round(v * 1000) / 1000;
-
-      // Cues use stage coordinates: x in [-1.35..1.35] (|x|>1.0 = Wings/Coxias), z in [-0.85..0.85] (-z = Upstage/Fundo, +z = Downstage/Plateia)
-      const cues = [
-        {
-          id: 'cue_1',
-          name: 'Cue 1 — Entrada das Coxias',
-          step: 'Preparação nas Coxias (Wings) + Shim Sham Entrada',
-          startTime: 0,
-          arriveTime: 0,
-          positions: {
-            d1: { x: -1.18, z: -0.25, angle: 90, ctrlX: 0, ctrlZ: 0, offsetBeats: 0, step: '' },
-            d2: { x: -1.18, z: 0.15, angle: 90, ctrlX: 0, ctrlZ: 0, offsetBeats: 0, step: '' },
-            d3: { x: -1.18, z: 0.50, angle: 90, ctrlX: 0, ctrlZ: 0, offsetBeats: 0, step: '' },
-            d4: { x: 1.18, z: -0.25, angle: -90, ctrlX: 0, ctrlZ: 0, offsetBeats: 0, step: '' },
-            d5: { x: 1.18, z: 0.15, angle: -90, ctrlX: 0, ctrlZ: 0, offsetBeats: 0, step: '' },
-            d6: { x: 1.18, z: 0.50, angle: -90, ctrlX: 0, ctrlZ: 0, offsetBeats: 0, step: '' }
-          }
-        },
-        {
-          id: 'cue_2',
-          name: 'Cue 2 — Linha do Shim Sham',
-          step: 'Shim Sham Chorus (Oito 2 • Frente para a Plateia)',
-          startTime: roundMs(2 * B),      // 1.043s (Oito 1, Tempo 3)
-          arriveTime: roundMs(1 * OITO),  // 4.174s (Cravado no Tempo 1 do Oito 2!)
-          positions: {
-            d1: { x: -0.75, z: 0.10, angle: 0, ctrlX: -0.95, ctrlZ: -0.35, offsetBeats: 0, step: '' },
-            d2: { x: -0.45, z: 0.10, angle: 0, ctrlX: -0.80, ctrlZ: 0.10, offsetBeats: 0, step: '' },
-            d3: { x: -0.15, z: 0.10, angle: 0, ctrlX: -0.60, ctrlZ: 0.45, offsetBeats: 0, step: '' },
-            d4: { x: 0.15, z: 0.10, angle: 0, ctrlX: 0.60, ctrlZ: -0.35, offsetBeats: 0, step: '' },
-            d5: { x: 0.45, z: 0.10, angle: 0, ctrlX: 0.80, ctrlZ: 0.10, offsetBeats: 0, step: '' },
-            d6: { x: 0.75, z: 0.10, angle: 0, ctrlX: 0.95, ctrlZ: 0.45, offsetBeats: 0, step: '' }
-          }
-        },
-        {
-          id: 'cue_3',
-          name: 'Cue 3 — Cunha (V) & Cruzamento Curvo',
-          step: 'Time Step Duplo + Buffalo (Cruzamento em Curva)',
-          startTime: roundMs(2 * OITO),   // 8.348s (Início do Oito 3)
-          arriveTime: roundMs(3 * OITO),  // 12.522s (Cravado no Tempo 1 do Oito 4!)
-          positions: {
-            d1: { x: -0.70, z: -0.35, angle: 15, ctrlX: -0.85, ctrlZ: -0.15, offsetBeats: 0, step: 'Buffalo Esq' },
-            d2: { x: 0.38, z: 0.05, angle: -15, ctrlX: -0.05, ctrlZ: -0.45, offsetBeats: 0, step: 'Cruzamento p/ Dir' },
-            d3: { x: -0.16, z: 0.45, angle: 0, ctrlX: -0.18, ctrlZ: 0.28, offsetBeats: 0, step: 'Time Step Centro' },
-            d4: { x: 0.16, z: 0.45, angle: 0, ctrlX: 0.18, ctrlZ: 0.28, offsetBeats: 0, step: 'Time Step Centro' },
-            d5: { x: -0.38, z: 0.05, angle: 15, ctrlX: 0.05, ctrlZ: 0.48, offsetBeats: 0, step: 'Cruzamento p/ Esq' },
-            d6: { x: 0.70, z: -0.35, angle: -15, ctrlX: 0.85, ctrlZ: -0.15, offsetBeats: 0, step: 'Buffalo Dir' }
-          }
-        },
-        {
-          id: 'cue_4',
-          name: 'Cue 4 — Roda de Desafios (Frente/Costas)',
-          step: 'Cânone em Roda: Cramp Roll + Giro de Costas / Frente',
-          startTime: roundMs(4 * OITO),   // 16.696s (Início do Oito 5)
-          arriveTime: roundMs(5 * OITO),  // 20.870s (Cravado no Tempo 1 do Oito 6!)
-          positions: {
-            d1: { x: -0.55, z: -0.35, angle: 135, ctrlX: -0.65, ctrlZ: -0.35, offsetBeats: 0, step: 'Cânone 1' },
-            d2: { x: 0.0, z: -0.55, angle: 180, ctrlX: 0.25, ctrlZ: -0.40, offsetBeats: 1, step: 'Cânone 2 (Costas p/ Plateia)' },
-            d3: { x: 0.55, z: -0.35, angle: -135, ctrlX: 0.35, ctrlZ: 0.15, offsetBeats: 2, step: 'Cânone 3' },
-            d4: { x: 0.55, z: 0.35, angle: -45, ctrlX: 0.40, ctrlZ: 0.42, offsetBeats: 3, step: 'Cânone 4' },
-            d5: { x: 0.0, z: 0.55, angle: 0, ctrlX: -0.20, ctrlZ: 0.35, offsetBeats: 4, step: 'Cânone 5 (Frente Plateia)' },
-            d6: { x: -0.55, z: 0.35, angle: 45, ctrlX: 0.15, ctrlZ: 0.05, offsetBeats: 5, step: 'Cânone 6' }
-          }
-        },
-        {
-          id: 'cue_5',
-          name: 'Cue 5 — Finale na Ribalta (2 Filas)',
-          step: 'Pullback + Wings Simultâneos + Break Final!',
-          startTime: roundMs(6 * OITO),   // 25.043s (Início do Oito 7)
-          arriveTime: roundMs(7 * OITO),  // 29.217s (Cravado no Tempo 1 do Oito 8!)
-          positions: {
-            d1: { x: -0.60, z: 0.48, angle: 0, ctrlX: -0.62, ctrlZ: 0.10, offsetBeats: 0, step: 'Pullback Frontal' },
-            d3: { x: 0.0, z: 0.48, angle: 0, ctrlX: 0.28, ctrlZ: 0.10, offsetBeats: 0, step: 'Wings Centro' },
-            d4: { x: 0.60, z: 0.48, angle: 0, ctrlX: 0.60, ctrlZ: 0.40, offsetBeats: 0, step: 'Pullback Frontal' },
-            d2: { x: -0.32, z: 0.05, angle: 0, ctrlX: -0.18, ctrlZ: -0.25, offsetBeats: 0, step: 'Maxie Ford' },
-            d5: { x: 0.32, z: 0.05, angle: 0, ctrlX: 0.18, ctrlZ: 0.25, offsetBeats: 0, step: 'Maxie Ford' },
-            d6: { x: 0.0, z: -0.35, angle: 0, ctrlX: -0.28, ctrlZ: -0.05, offsetBeats: 0, step: 'Over the Top' }
-          }
-        }
+      // Mapa de Andamento (BPM variável por Oito) calibrado exatamente para os 40 Oitos da música demo (175s)
+      const calibratedTempoMap = [
+        { id: 'tm_1', bar: 1, bpm: 119.1067, num: 4, den: 4 },
+        { id: 'tm_e2', bar: 3, bpm: 119.5517, num: 4, den: 4 },
+        { id: 'tm_e3', bar: 5, bpm: 117.0732, num: 4, den: 4 },
+        { id: 'tm_e4', bar: 7, bpm: 116.1384, num: 4, den: 4 },
+        { id: 'tm_e5', bar: 9, bpm: 114.6953, num: 4, den: 4 },
+        { id: 'tm_e6', bar: 11, bpm: 117.0732, num: 4, den: 4 },
+        { id: 'tm_e7', bar: 13, bpm: 114.7501, num: 4, den: 4 },
+        { id: 'tm_e8', bar: 15, bpm: 115.1908, num: 4, den: 4 },
+        { id: 'tm_e9', bar: 17, bpm: 114.2857, num: 4, den: 4 },
+        { id: 'tm_e10', bar: 19, bpm: 114.2586, num: 4, den: 4 },
+        { id: 'tm_e11', bar: 21, bpm: 114.3129, num: 4, den: 4 },
+        { id: 'tm_e12', bar: 23, bpm: 112.5176, num: 4, den: 4 },
+        { id: 'tm_e13', bar: 25, bpm: 112.9411, num: 4, den: 4 },
+        { id: 'tm_e14', bar: 27, bpm: 113.368, num: 4, den: 4 },
+        { id: 'tm_e15', bar: 29, bpm: 112.9412, num: 4, den: 4 },
+        { id: 'tm_e16', bar: 31, bpm: 113.852, num: 4, den: 4 },
+        { id: 'tm_e17', bar: 33, bpm: 110.3195, num: 4, den: 4 },
+        { id: 'tm_e18', bar: 35, bpm: 111.6279, num: 4, den: 4 },
+        { id: 'tm_e19', bar: 37, bpm: 111.2398, num: 4, den: 4 },
+        { id: 'tm_e20', bar: 39, bpm: 112.071, num: 4, den: 4 },
+        { id: 'tm_e21', bar: 41, bpm: 109.9153, num: 4, den: 4 },
+        { id: 'tm_e22', bar: 43, bpm: 111.6279, num: 4, den: 4 },
+        { id: 'tm_e23', bar: 45, bpm: 110.7522, num: 4, den: 4 },
+        { id: 'tm_e24', bar: 47, bpm: 111.6279, num: 4, den: 4 },
+        { id: 'tm_e25', bar: 49, bpm: 109.0909, num: 4, den: 4 },
+        { id: 'tm_e26', bar: 51, bpm: 108.2788, num: 4, den: 4 },
+        { id: 'tm_e27', bar: 53, bpm: 108.2544, num: 4, den: 4 },
+        { id: 'tm_e28', bar: 55, bpm: 108.3033, num: 4, den: 4 },
+        { id: 'tm_e29', bar: 57, bpm: 108.2543, num: 4, den: 4 },
+        { id: 'tm_e30', bar: 59, bpm: 109.091, num: 4, den: 4 },
+        { id: 'tm_e31', bar: 61, bpm: 106.2887, num: 4, den: 4 },
+        { id: 'tm_e32', bar: 63, bpm: 106.2652, num: 4, den: 4 },
+        { id: 'tm_e33', bar: 65, bpm: 107.0712, num: 4, den: 4 },
+        { id: 'tm_e34', bar: 67, bpm: 107.4547, num: 4, den: 4 },
+        { id: 'tm_e35', bar: 69, bpm: 105.4945, num: 4, den: 4 },
+        { id: 'tm_e36', bar: 71, bpm: 107.0472, num: 4, den: 4 },
+        { id: 'tm_e37', bar: 73, bpm: 103.2258, num: 4, den: 4 },
+        { id: 'tm_e38', bar: 75, bpm: 102.8719, num: 4, den: 4 },
+        { id: 'tm_e39', bar: 77, bpm: 115, num: 4, den: 4 },
+        { id: 'tm_e40', bar: 79, bpm: 204.8579, num: 4, den: 4 },
+        { id: 'tm_e41', bar: 81, bpm: 115, num: 4, den: 4 }
       ];
 
       project = {
         title: 'Shim Sham Classic & Canon',
-        bpm: 115,
+        bpm: 119.1067,
         audioOffset: 0.430,
-        duration: roundMs(8 * OITO), // 33.391s (8 Oitos exatos a 115 BPM)
+        duration: 175,
         stageWidthM: 10,
         stageDepthM: 7,
         floorMarking: 'quadrantes',
-        audienceSide: 'bottom', // 'bottom' | 'top' | 'left' | 'right'
-        avatarStyle: 'realistic', // 'stylized' | 'realistic'
-        tempoMap: [
-          { id: 'tm_1', bar: 1, bpm: 115, num: 4, den: 4 }
-        ],
+        audienceSide: 'bottom',
+        avatarStyle: 'realistic',
+        tempoMap: calibratedTempoMap,
         dancers,
-        cues
+        cues: []
       };
+
+      // Constrói a grade musical exata dos 40 Oitos calibrados para cravar todas as marcas (Cues) no milissegundo exato de cada Oito
+      const demoGrid = buildMusicalGrid();
+      const eBeat = (eightNum, beatInEight = 1) => {
+        const idx = Math.max(0, (eightNum - 1) * 8 + (beatInEight - 1));
+        const b = demoGrid.beats[idx];
+        return b ? Math.round(b.time * 1000) / 1000 : 0;
+      };
+
+      const cues = [
+        // 1. OITO 1 (0.000s): Preparação nas Coxias
+        {
+          id: 'cue_1',
+          name: 'Cue 1 (Oito 1) — Entrada das Coxias',
+          step: 'Preparação nas Coxias + Flap Heel & Shuffle Ball Change',
+          startTime: 0,
+          arriveTime: 0,
+          positions: {
+            d1: { x: -1.18, z: -0.32, angle: 90, ctrlX: 0, ctrlZ: 0, offsetBeats: 0, step: 'Flap Heel Entrada' },
+            d2: { x: -1.18, z: 0.08, angle: 90, ctrlX: 0, ctrlZ: 0, offsetBeats: 0, step: 'Flap Heel Entrada' },
+            d3: { x: -1.18, z: 0.48, angle: 90, ctrlX: 0, ctrlZ: 0, offsetBeats: 0, step: 'Flap Heel Entrada' },
+            d4: { x: 1.18, z: -0.32, angle: -90, ctrlX: 0, ctrlZ: 0, offsetBeats: 0, step: 'Flap Heel Entrada' },
+            d5: { x: 1.18, z: 0.08, angle: -90, ctrlX: 0, ctrlZ: 0, offsetBeats: 0, step: 'Flap Heel Entrada' },
+            d6: { x: 1.18, z: 0.48, angle: -90, ctrlX: 0, ctrlZ: 0, offsetBeats: 0, step: 'Flap Heel Entrada' }
+          }
+        },
+        // 2. OITO 2 (4.030s): Linha Frontal do Shim Sham (Oitos 2 e 3)
+        {
+          id: 'cue_2',
+          name: 'Cue 2 (Oito 2) — Linha Frontal do Shim Sham',
+          step: 'Shim Sham Chorus + Shuffle Step + Full Break',
+          startTime: eBeat(1, 3),
+          arriveTime: eBeat(2, 1),
+          positions: {
+            d1: { x: -0.78, z: 0.12, angle: 0, ctrlX: -0.98, ctrlZ: -0.35, offsetBeats: 0, step: 'Shim Sham Chorus' },
+            d2: { x: -0.47, z: 0.12, angle: 0, ctrlX: -0.82, ctrlZ: 0.10, offsetBeats: 0, step: 'Shim Sham Chorus' },
+            d3: { x: -0.16, z: 0.12, angle: 0, ctrlX: -0.60, ctrlZ: 0.45, offsetBeats: 0, step: 'Shim Sham Chorus' },
+            d4: { x: 0.16, z: 0.12, angle: 0, ctrlX: 0.60, ctrlZ: -0.35, offsetBeats: 0, step: 'Shim Sham Chorus' },
+            d5: { x: 0.47, z: 0.12, angle: 0, ctrlX: 0.82, ctrlZ: 0.10, offsetBeats: 0, step: 'Shim Sham Chorus' },
+            d6: { x: 0.78, z: 0.12, angle: 0, ctrlX: 0.98, ctrlZ: 0.45, offsetBeats: 0, step: 'Shim Sham Chorus' }
+          }
+        },
+        // 3. OITO 4 (12.145s): Duas Filas em Xadrez (Stagger — Oitos 4 e 5)
+        {
+          id: 'cue_3',
+          name: 'Cue 3 (Oito 4) — 2 Filas em Xadrez (Tacky Annie)',
+          step: 'Tacky Annie + Time Step (Simples) + Half Break',
+          startTime: eBeat(3, 5),
+          arriveTime: eBeat(4, 1),
+          positions: {
+            d1: { x: -0.68, z: 0.42, angle: 0, ctrlX: -0.74, ctrlZ: 0.28, offsetBeats: 0, step: 'Tacky Annie Frente' },
+            d2: { x: -0.40, z: -0.22, angle: 0, ctrlX: -0.44, ctrlZ: -0.05, offsetBeats: 0, step: 'Tacky Annie Fundo' },
+            d3: { x: 0.0, z: 0.42, angle: 0, ctrlX: -0.08, ctrlZ: 0.28, offsetBeats: 0, step: 'Tacky Annie Centro' },
+            d4: { x: 0.40, z: -0.22, angle: 0, ctrlX: 0.28, ctrlZ: -0.05, offsetBeats: 0, step: 'Tacky Annie Fundo' },
+            d5: { x: 0.68, z: 0.42, angle: 0, ctrlX: 0.58, ctrlZ: 0.28, offsetBeats: 0, step: 'Tacky Annie Frente' },
+            d6: { x: 0.0, z: -0.46, angle: 0, ctrlX: 0.38, ctrlZ: -0.22, offsetBeats: 0, step: 'Tacky Annie Ápice' }
+          }
+        },
+        // 4. OITO 6 (20.463s): Cunha (V) na Ribalta (Oitos 6 e 7)
+        {
+          id: 'cue_4',
+          name: 'Cue 4 (Oito 6) — Cunha (V) na Ribalta',
+          step: 'Time Step (Duplo) + Waltz Clog + Shuffle Hop Step',
+          startTime: eBeat(5, 5),
+          arriveTime: eBeat(6, 1),
+          positions: {
+            d1: { x: -0.76, z: -0.32, angle: 15, ctrlX: -0.75, ctrlZ: 0.05, offsetBeats: 0, step: 'Time Step Duplo' },
+            d2: { x: -0.46, z: 0.08, angle: 15, ctrlX: -0.44, ctrlZ: -0.06, offsetBeats: 0, step: 'Time Step Duplo' },
+            d3: { x: -0.18, z: 0.50, angle: 0, ctrlX: -0.10, ctrlZ: 0.46, offsetBeats: 0, step: 'Líder Cunha Esq' },
+            d4: { x: 0.18, z: 0.50, angle: 0, ctrlX: 0.28, ctrlZ: 0.15, offsetBeats: 0, step: 'Líder Cunha Dir' },
+            d5: { x: 0.46, z: 0.08, angle: -15, ctrlX: 0.56, ctrlZ: 0.24, offsetBeats: 0, step: 'Time Step Duplo' },
+            d6: { x: 0.76, z: -0.32, angle: -15, ctrlX: 0.42, ctrlZ: -0.40, offsetBeats: 0, step: 'Time Step Duplo' }
+          }
+        },
+        // 5. OITO 8 (28.746s): Cruzamento em Curva (Buffalo & Maxie Ford — Oitos 8 e 9)
+        {
+          id: 'cue_5',
+          name: 'Cue 5 (Oito 8) — Cruzamento em Curva (Buffalo)',
+          step: 'Buffalo + Double Buffalo + Maxie Ford',
+          startTime: eBeat(7, 5),
+          arriveTime: eBeat(8, 1),
+          positions: {
+            d1: { x: 0.68, z: -0.25, angle: -30, ctrlX: 0.0, ctrlZ: -0.62, offsetBeats: 0, step: 'Buffalo p/ Direita' },
+            d2: { x: 0.36, z: 0.18, angle: -15, ctrlX: -0.05, ctrlZ: -0.25, offsetBeats: 0, step: 'Buffalo p/ Direita' },
+            d3: { x: 0.72, z: 0.48, angle: -30, ctrlX: 0.28, ctrlZ: 0.65, offsetBeats: 0, step: 'Maxie Ford Dir' },
+            d4: { x: -0.72, z: 0.48, angle: 30, ctrlX: -0.28, ctrlZ: 0.65, offsetBeats: 0, step: 'Maxie Ford Esq' },
+            d5: { x: -0.36, z: 0.18, angle: 15, ctrlX: 0.05, ctrlZ: 0.42, offsetBeats: 0, step: 'Buffalo p/ Esquerda' },
+            d6: { x: -0.68, z: -0.25, angle: 30, ctrlX: 0.0, ctrlZ: -0.05, offsetBeats: 0, step: 'Buffalo p/ Esquerda' }
+          }
+        },
+        // 6. OITO 10 (37.113s): Moldura em U & Dueto Central (Oitos 10 e 11)
+        {
+          id: 'cue_6',
+          name: 'Cue 6 (Oito 10) — Moldura em U & Dueto Central',
+          step: 'Irish + Cincinnati + Paddle & Roll',
+          startTime: eBeat(9, 5),
+          arriveTime: eBeat(10, 1),
+          positions: {
+            d1: { x: -0.78, z: -0.35, angle: 45, ctrlX: 0.0, ctrlZ: -0.50, offsetBeats: 0, step: 'Paddle & Roll' },
+            d6: { x: -0.78, z: 0.22, angle: 60, ctrlX: -0.75, ctrlZ: 0.0, offsetBeats: 0, step: 'Paddle & Roll' },
+            d3: { x: -0.22, z: 0.50, angle: 0, ctrlX: 0.25, ctrlZ: 0.52, offsetBeats: 0, step: 'Solo Irish & Cincinnati' },
+            d4: { x: 0.22, z: 0.50, angle: 0, ctrlX: -0.25, ctrlZ: 0.52, offsetBeats: 0, step: 'Solo Irish & Cincinnati' },
+            d2: { x: 0.78, z: 0.22, angle: -60, ctrlX: 0.60, ctrlZ: 0.20, offsetBeats: 0, step: 'Paddle & Roll' },
+            d5: { x: 0.78, z: -0.35, angle: -45, ctrlX: 0.20, ctrlZ: -0.20, offsetBeats: 0, step: 'Paddle & Roll' }
+          }
+        },
+        // 7. OITO 12 (45.514s): Losango Central (Diamond — Oitos 12 e 13)
+        {
+          id: 'cue_7',
+          name: 'Cue 7 (Oito 12) — Losango (Diamond Rhythm Tap)',
+          step: 'Cramp Roll + Flap Cramp Roll + Paradiddle',
+          startTime: eBeat(11, 5),
+          arriveTime: eBeat(12, 1),
+          positions: {
+            d1: { x: -0.18, z: 0.54, angle: 0, ctrlX: -0.50, ctrlZ: 0.20, offsetBeats: 0, step: 'Flap Cramp Roll' },
+            d5: { x: 0.18, z: 0.54, angle: 0, ctrlX: 0.50, ctrlZ: 0.20, offsetBeats: 0, step: 'Flap Cramp Roll' },
+            d6: { x: -0.56, z: 0.06, angle: 15, ctrlX: -0.68, ctrlZ: 0.14, offsetBeats: 1, step: 'Paradiddle' },
+            d2: { x: 0.56, z: 0.06, angle: -15, ctrlX: 0.68, ctrlZ: 0.14, offsetBeats: 1, step: 'Paradiddle' },
+            d3: { x: -0.20, z: -0.42, angle: 0, ctrlX: -0.22, ctrlZ: 0.05, offsetBeats: 2, step: 'Double Cramp Roll' },
+            d4: { x: 0.20, z: -0.42, angle: 0, ctrlX: 0.22, ctrlZ: 0.05, offsetBeats: 2, step: 'Double Cramp Roll' }
+          }
+        },
+        // 8. OITO 14 (54.045s): Grande Diagonal Broadway em Cânone (Oitos 14 e 15)
+        {
+          id: 'cue_8',
+          name: 'Cue 8 (Oito 14) — Grande Diagonal Broadway (Cânone)',
+          step: 'Riff Walk + 4-Beat Riff + Riffle',
+          startTime: eBeat(13, 5),
+          arriveTime: eBeat(14, 1),
+          positions: {
+            d1: { x: -0.82, z: -0.52, angle: -30, ctrlX: -0.52, ctrlZ: 0.0, offsetBeats: 0, step: 'Riff Walk (1º)' },
+            d6: { x: -0.50, z: -0.31, angle: -30, ctrlX: -0.54, ctrlZ: -0.12, offsetBeats: 1, step: 'Riff Walk (2º)' },
+            d3: { x: -0.18, z: -0.10, angle: -30, ctrlX: -0.18, ctrlZ: -0.25, offsetBeats: 2, step: 'Riff Walk (3º)' },
+            d4: { x: 0.18, z: 0.10, angle: -30, ctrlX: 0.18, ctrlZ: -0.15, offsetBeats: 3, step: 'Riff Walk (4º)' },
+            d2: { x: 0.50, z: 0.31, angle: -30, ctrlX: 0.54, ctrlZ: 0.18, offsetBeats: 4, step: 'Riff Walk (5º)' },
+            d5: { x: 0.82, z: 0.52, angle: -30, ctrlX: 0.52, ctrlZ: 0.52, offsetBeats: 5, step: 'Riff Walk (6º)' }
+          }
+        },
+        // 9. OITO 16 (62.528s): Diagonal Invertida & Jogo Frente/Costas (Oitos 16 e 17)
+        {
+          id: 'cue_9',
+          name: 'Cue 9 (Oito 16) — Diagonal Invertida (Frente & Costas)',
+          step: 'Essence (Soft Shoe) + Back Essence + Bombershay',
+          startTime: eBeat(15, 5),
+          arriveTime: eBeat(16, 1),
+          positions: {
+            d1: { x: -0.82, z: 0.52, angle: 0, ctrlX: -0.85, ctrlZ: 0.0, offsetBeats: 0, step: 'Soft Shoe Frente' },
+            d6: { x: -0.50, z: 0.31, angle: 180, ctrlX: -0.50, ctrlZ: 0.0, offsetBeats: 0, step: 'Back Essence (Costas)' },
+            d3: { x: -0.18, z: 0.10, angle: 0, ctrlX: -0.18, ctrlZ: 0.0, offsetBeats: 0, step: 'Bombershay Frente' },
+            d4: { x: 0.18, z: -0.10, angle: 180, ctrlX: 0.18, ctrlZ: 0.0, offsetBeats: 0, step: 'Back Essence (Costas)' },
+            d2: { x: 0.50, z: -0.31, angle: 0, ctrlX: 0.50, ctrlZ: 0.0, offsetBeats: 0, step: 'Bombershay Frente' },
+            d5: { x: 0.82, z: -0.52, angle: 180, ctrlX: 0.85, ctrlZ: 0.0, offsetBeats: 0, step: 'Back Essence (Costas)' }
+          }
+        },
+        // 10. OITO 18 (71.095s): Roda de Desafios (Trading Fours — Oitos 18 a 20)
+        {
+          id: 'cue_10',
+          name: 'Cue 10 (Oito 18) — Roda de Desafios (Trading Fours)',
+          step: 'Desafio (Trading Fours) + Improviso / Solo (Hoofing)',
+          startTime: eBeat(17, 5),
+          arriveTime: eBeat(18, 1),
+          positions: {
+            d1: { x: -0.56, z: -0.34, angle: 135, ctrlX: -0.72, ctrlZ: 0.10, offsetBeats: 0, step: 'Desafio 1 (Olha Centro)' },
+            d6: { x: 0.0, z: -0.56, angle: 180, ctrlX: -0.25, ctrlZ: -0.20, offsetBeats: 1, step: 'Desafio 2 (De Costas)' },
+            d3: { x: 0.56, z: -0.34, angle: -135, ctrlX: 0.20, ctrlZ: -0.15, offsetBeats: 2, step: 'Desafio 3 (Olha Centro)' },
+            d4: { x: 0.56, z: 0.34, angle: -45, ctrlX: 0.40, ctrlZ: 0.15, offsetBeats: 3, step: 'Desafio 4 (Olha Centro)' },
+            d2: { x: 0.0, z: 0.56, angle: 0, ctrlX: 0.25, ctrlZ: 0.15, offsetBeats: 4, step: 'Desafio 5 (Frente Plateia)' },
+            d5: { x: -0.56, z: 0.34, angle: 45, ctrlX: 0.10, ctrlZ: -0.05, offsetBeats: 5, step: 'Desafio 6 (Olha Centro)' }
+          }
+        },
+        // 11. OITO 21 (84.034s): Roda Expandida Virada para Fora (360° — Oitos 21 e 22)
+        {
+          id: 'cue_11',
+          name: 'Cue 11 (Oito 21) — Roda Expandida 360° (Giro p/ Fora)',
+          step: 'Suzy Q + Grapevine + Falling Off the Log',
+          startTime: eBeat(20, 5),
+          arriveTime: eBeat(21, 1),
+          positions: {
+            d1: { x: -0.72, z: -0.42, angle: -45, ctrlX: -0.64, ctrlZ: -0.38, offsetBeats: 0, step: 'Suzy Q & Grapevine' },
+            d6: { x: 0.0, z: -0.66, angle: 0, ctrlX: 0.0, ctrlZ: -0.60, offsetBeats: 0, step: 'Falling Off the Log' },
+            d3: { x: 0.72, z: -0.42, angle: 45, ctrlX: 0.64, ctrlZ: -0.38, offsetBeats: 0, step: 'Suzy Q & Grapevine' },
+            d4: { x: 0.72, z: 0.42, angle: 135, ctrlX: 0.64, ctrlZ: 0.38, offsetBeats: 1, step: 'Suzy Q (Costas Diagonal)' },
+            d2: { x: 0.0, z: 0.62, angle: 0, ctrlX: 0.0, ctrlZ: 0.59, offsetBeats: 1, step: 'Falling Off the Log' },
+            d5: { x: -0.72, z: 0.42, angle: -135, ctrlX: -0.64, ctrlZ: 0.38, offsetBeats: 1, step: 'Suzy Q (Costas Diagonal)' }
+          }
+        },
+        // 12. OITO 23 (92.712s): Corredor Central (Avenida) & Passagem de Solistas (Oitos 23 e 24)
+        {
+          id: 'cue_12',
+          name: 'Cue 12 (Oito 23) — Corredor Central & Passagem',
+          step: 'Traveling Time Step + Drawback + Single Wing',
+          startTime: eBeat(22, 5),
+          arriveTime: eBeat(23, 1),
+          positions: {
+            d1: { x: -0.68, z: -0.28, angle: 90, ctrlX: -0.70, ctrlZ: -0.35, offsetBeats: 0, step: 'Coluna Esq (Olha Dir)' },
+            d5: { x: -0.68, z: 0.28, angle: 90, ctrlX: -0.70, ctrlZ: 0.35, offsetBeats: 0, step: 'Coluna Esq (Olha Dir)' },
+            d3: { x: 0.68, z: -0.28, angle: -90, ctrlX: 0.70, ctrlZ: -0.35, offsetBeats: 0, step: 'Coluna Dir (Olha Esq)' },
+            d4: { x: 0.68, z: 0.28, angle: -90, ctrlX: 0.70, ctrlZ: 0.35, offsetBeats: 0, step: 'Coluna Dir (Olha Esq)' },
+            d6: { x: -0.18, z: 0.46, angle: 0, ctrlX: -0.12, ctrlZ: -0.10, offsetBeats: 1, step: 'Atravessa Corredor (Wing)' },
+            d2: { x: 0.18, z: 0.46, angle: 0, ctrlX: 0.12, ctrlZ: 0.54, offsetBeats: 1, step: 'Single Wing na Ribalta' }
+          }
+        },
+        // 13. OITO 25 (101.345s): Três Duplas em Simetria (BS Chorus & Coles Stroll — Oitos 25 a 27)
+        {
+          id: 'cue_13',
+          name: 'Cue 13 (Oito 25) — 3 Duplas (BS Chorus & Coles Stroll)',
+          step: 'BS Chorus + Coles Stroll + Shuffle Hop Step',
+          startTime: eBeat(24, 5),
+          arriveTime: eBeat(25, 1),
+          positions: {
+            d1: { x: -0.74, z: 0.28, angle: 15, ctrlX: -0.72, ctrlZ: 0.0, offsetBeats: 0, step: 'Dupla Esq (Coles Stroll)' },
+            d5: { x: -0.44, z: 0.28, angle: -15, ctrlX: -0.56, ctrlZ: 0.28, offsetBeats: 0, step: 'Dupla Esq (Coles Stroll)' },
+            d6: { x: -0.16, z: -0.25, angle: 0, ctrlX: -0.18, ctrlZ: 0.10, offsetBeats: 1, step: 'Dupla Centro (BS Chorus)' },
+            d2: { x: 0.16, z: -0.25, angle: 0, ctrlX: 0.18, ctrlZ: 0.10, offsetBeats: 1, step: 'Dupla Centro (BS Chorus)' },
+            d3: { x: 0.44, z: 0.28, angle: 15, ctrlX: 0.56, ctrlZ: 0.0, offsetBeats: 2, step: 'Dupla Dir (Coles Stroll)' },
+            d4: { x: 0.74, z: 0.28, angle: -15, ctrlX: 0.72, ctrlZ: 0.28, offsetBeats: 2, step: 'Dupla Dir (Coles Stroll)' }
+          }
+        },
+        // 14. OITO 28 (114.611s): Pirâmide / Cunha Invertida (Oitos 28 a 30)
+        {
+          id: 'cue_14',
+          name: 'Cue 14 (Oito 28) — Pirâmide & Time Step Triplo',
+          step: 'Time Step (Triplo) + Military Time Step + Chug',
+          startTime: eBeat(27, 5),
+          arriveTime: eBeat(28, 1),
+          positions: {
+            d1: { x: -0.76, z: 0.46, angle: 0, ctrlX: -0.75, ctrlZ: 0.36, offsetBeats: 0, step: 'Base Pirâmide Esq' },
+            d5: { x: -0.26, z: 0.46, angle: 0, ctrlX: -0.35, ctrlZ: 0.36, offsetBeats: 0, step: 'Base Pirâmide Centro-Esq' },
+            d3: { x: 0.26, z: 0.46, angle: 0, ctrlX: 0.35, ctrlZ: 0.36, offsetBeats: 0, step: 'Base Pirâmide Centro-Dir' },
+            d4: { x: 0.76, z: 0.46, angle: 0, ctrlX: 0.75, ctrlZ: 0.36, offsetBeats: 0, step: 'Base Pirâmide Dir' },
+            d6: { x: -0.38, z: -0.18, angle: 0, ctrlX: -0.28, ctrlZ: -0.22, offsetBeats: 1, step: 'Meio Pirâmide Esq' },
+            d2: { x: 0.38, z: -0.18, angle: 0, ctrlX: 0.28, ctrlZ: -0.22, offsetBeats: 1, step: 'Meio Pirâmide Dir' }
+          }
+        },
+        // 15. OITO 31 (127.878s): Meia-Lua (Semicírculo) & Bojangles Stair Step (Oitos 31 a 33)
+        {
+          id: 'cue_15',
+          name: 'Cue 15 (Oito 31) — Meia-Lua & Over the Top',
+          step: 'Bojangles Stair Step + Over the Top + Trenches',
+          startTime: eBeat(30, 5),
+          arriveTime: eBeat(31, 1),
+          positions: {
+            d1: { x: -0.82, z: 0.25, angle: 25, ctrlX: -0.80, ctrlZ: 0.35, offsetBeats: 0, step: 'Meia-Lua Ponta Esq' },
+            d6: { x: -0.52, z: -0.18, angle: 15, ctrlX: -0.46, ctrlZ: -0.18, offsetBeats: 0, step: 'Bojangles Stair Step' },
+            d5: { x: -0.18, z: -0.38, angle: 0, ctrlX: -0.22, ctrlZ: 0.05, offsetBeats: 1, step: 'Over the Top' },
+            d3: { x: 0.18, z: -0.38, angle: 0, ctrlX: 0.22, ctrlZ: 0.05, offsetBeats: 1, step: 'Over the Top' },
+            d2: { x: 0.52, z: -0.18, angle: -15, ctrlX: 0.46, ctrlZ: -0.18, offsetBeats: 2, step: 'Bojangles Stair Step' },
+            d4: { x: 0.82, z: 0.25, angle: -25, ctrlX: 0.80, ctrlZ: 0.35, offsetBeats: 2, step: 'Meia-Lua Ponta Dir' }
+          }
+        },
+        // 16. OITO 34 (141.391s): Linha Compacta de Virtuosismo (Pullbacks & Wings — Oitos 34 a 36)
+        {
+          id: 'cue_16',
+          name: 'Cue 16 (Oito 34) — Linha Compacta (Pullbacks & Wings)',
+          step: 'Double Pullback + Alternating Pullback + Pendulum Wing',
+          startTime: eBeat(33, 5),
+          arriveTime: eBeat(34, 1),
+          positions: {
+            d1: { x: -0.75, z: 0.06, angle: 0, ctrlX: -0.78, ctrlZ: 0.15, offsetBeats: 0, step: 'Double Pullback' },
+            d6: { x: -0.45, z: 0.06, angle: 0, ctrlX: -0.48, ctrlZ: -0.05, offsetBeats: 0, step: 'Double Pullback' },
+            d5: { x: -0.15, z: 0.06, angle: 0, ctrlX: -0.16, ctrlZ: -0.15, offsetBeats: 0, step: 'Pendulum Wing' },
+            d3: { x: 0.15, z: 0.06, angle: 0, ctrlX: 0.16, ctrlZ: -0.15, offsetBeats: 0, step: 'Pendulum Wing' },
+            d2: { x: 0.45, z: 0.06, angle: 0, ctrlX: 0.48, ctrlZ: -0.05, offsetBeats: 0, step: 'Double Pullback' },
+            d4: { x: 0.75, z: 0.06, angle: 0, ctrlX: 0.78, ctrlZ: 0.15, offsetBeats: 0, step: 'Double Pullback' }
+          }
+        },
+        // 17. OITO 37 (154.888s): Avanço para a Ribalta (2 Filas de Finale — Oitos 37 e 38)
+        {
+          id: 'cue_17',
+          name: 'Cue 17 (Oito 37) — Avanço na Ribalta (Wings & Slides)',
+          step: 'Wings (Duplo) + Bell Clicks (Heel Clicks) + Slide / Glide',
+          startTime: eBeat(36, 5),
+          arriveTime: eBeat(37, 1),
+          positions: {
+            d1: { x: -0.62, z: 0.48, angle: 0, ctrlX: -0.68, ctrlZ: 0.28, offsetBeats: 0, step: 'Pullback Frontal' },
+            d3: { x: 0.0, z: 0.48, angle: 0, ctrlX: 0.08, ctrlZ: 0.28, offsetBeats: 0, step: 'Wings Centro' },
+            d4: { x: 0.62, z: 0.48, angle: 0, ctrlX: 0.68, ctrlZ: 0.28, offsetBeats: 0, step: 'Pullback Frontal' },
+            d6: { x: -0.34, z: 0.04, angle: 0, ctrlX: -0.40, ctrlZ: 0.05, offsetBeats: 1, step: 'Maxie Ford & Bell Clicks' },
+            d2: { x: 0.34, z: 0.04, angle: 0, ctrlX: 0.40, ctrlZ: 0.05, offsetBeats: 1, step: 'Maxie Ford & Bell Clicks' },
+            d5: { x: 0.0, z: -0.34, angle: 0, ctrlX: -0.08, ctrlZ: -0.15, offsetBeats: 2, step: 'Over the Top Central' }
+          }
+        },
+        // 18. OITO 39 (164.205s): Grande Quadro Final na Ribalta (Freeze & Break — Oitos 39 a 41)
+        {
+          id: 'cue_18',
+          name: 'Cue 18 (Oito 39) — Grande Finale na Ribalta (Break Final!)',
+          step: 'Full Break + Toe Stand (Ponta) + Freeze & Break!',
+          startTime: eBeat(38, 5),
+          arriveTime: eBeat(39, 1),
+          positions: {
+            d1: { x: -0.82, z: 0.36, angle: 20, ctrlX: -0.72, ctrlZ: 0.42, offsetBeats: 0, step: 'Pose Final Toe Stand' },
+            d6: { x: -0.48, z: 0.48, angle: 10, ctrlX: -0.42, ctrlZ: 0.26, offsetBeats: 0, step: 'Freeze & Break' },
+            d3: { x: -0.16, z: 0.58, angle: 0, ctrlX: -0.08, ctrlZ: 0.54, offsetBeats: 0, step: 'Freeze & Break Centro' },
+            d5: { x: 0.16, z: 0.58, angle: 0, ctrlX: 0.08, ctrlZ: 0.15, offsetBeats: 0, step: 'Slide p/ Frente & Break' },
+            d2: { x: 0.48, z: 0.48, angle: -10, ctrlX: 0.42, ctrlZ: 0.26, offsetBeats: 0, step: 'Freeze & Break' },
+            d4: { x: 0.82, z: 0.36, angle: -20, ctrlX: 0.72, ctrlZ: 0.42, offsetBeats: 0, step: 'Pose Final Toe Stand' }
+          }
+        }
+      ];
+
+      project.cues = cues;
       activeCueIndex = 1;
+      liveCueCursorIdx = 2;
+      liveEightCursor = 2;
       selectedDancerId = 'd1';
       currentTime = cues[1].arriveTime;
-      document.getElementById('bpmInput').value = project.bpm;
+      document.getElementById('bpmInput').value = Number(project.bpm).toFixed(1).replace(/\.0$/, '');
       document.getElementById('durationInput').value = project.duration;
       const offInp = document.getElementById('audioOffsetInput');
       if (offInp) offInp.value = project.audioOffset.toFixed(3);
@@ -5024,10 +5286,10 @@
         audioElement.preload = 'auto';
         document.getElementById('audioFileName').textContent = '🎷 Swing Jazz Demo';
         document.getElementById('btnDefaultMusic').classList.add('btn-amber');
-        // Calibração exata da demonstração Swing Jazz: 115 BPM e Offset 0.430s
-        project.bpm = 115;
+        // Mantém o Offset de 0.430s e o BPM inicial do mapa calibrado dos 40 Oitos
+        ensureTempoMap();
         project.audioOffset = 0.430;
-        document.getElementById('bpmInput').value = 115;
+        document.getElementById('bpmInput').value = Number(project.bpm).toFixed(1).replace(/\.0$/, '');
         document.getElementById('audioOffsetInput').value = '0.430';
         if (userTriggered) {
           metronomeEnabled = false;
@@ -5046,13 +5308,36 @@
     async function handleAudioUpload(e) {
       const file = e.target.files && e.target.files[0];
       if (!file) return;
-      document.getElementById('audioFileName').textContent = file.name;
+      const isVideoFile = (file.type && file.type.startsWith('video/')) || /\.(mp4|webm|mov|mkv|avi|m4v)$/i.test(file.name);
+      const icon = isVideoFile ? '🎬 ' : '🎵 ';
+      document.getElementById('audioFileName').textContent = icon + file.name;
       document.getElementById('btnDefaultMusic').classList.remove('btn-amber');
       if (audioElement) audioElement.pause();
       if (audioObjectUrl) URL.revokeObjectURL(audioObjectUrl);
       audioObjectUrl = URL.createObjectURL(file);
-      audioElement = new Audio(audioObjectUrl);
+
+      // Suporta tanto arquivos de áudio (MP3, WAV, M4A, OGG) quanto extração de áudio de arquivos de vídeo (MP4, MOV, WebM, MKV)
+      if (isVideoFile) {
+        const vidEl = document.createElement('video');
+        vidEl.src = audioObjectUrl;
+        vidEl.playsInline = true;
+        vidEl.preload = 'auto';
+        vidEl.style.display = 'none';
+        audioElement = vidEl;
+      } else {
+        audioElement = new Audio(audioObjectUrl);
+      }
       audioElement.volume = audioVolume;
+
+      // Caso o vídeo tenha um codec cujo ArrayBuffer demore ou falhe no decodeAudioData, ajusta a duração pelo metadata
+      audioElement.addEventListener('loadedmetadata', () => {
+        if (audioElement.duration && isFinite(audioElement.duration)) {
+          project.duration = Math.ceil(audioElement.duration);
+          const durInp = document.getElementById('durationInput');
+          if (durInp) durInp.value = project.duration;
+        }
+      }, { once: true });
+
       const arr = await file.arrayBuffer();
       await decodeArrayBufferToWaveform(arr, true, true);
     }
