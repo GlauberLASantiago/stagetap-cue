@@ -744,6 +744,44 @@
           </div>
         </div>
       </div>
+
+      <!-- Variable BPM & Time Signature Map Editor -->
+      <div class="section-box">
+        <div class="section-title">
+          <span>🎼 Mapa de Andamento &amp; Compasso</span>
+          <button type="button" class="btn btn-amber" style="padding:2px 7px;font-size:0.68rem;" onclick="detectVariableBpmFromBuffer()" title="Detectar variações de BPM ao longo da música automaticamente">📈 Auto-Variável</button>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;">
+          <div>
+            <label class="field-label"><span>Compasso #</span></label>
+            <input type="number" id="tmBarInput" class="input-num" min="1" step="1" value="5" />
+          </div>
+          <div>
+            <label class="field-label"><span>BPM</span></label>
+            <input type="number" id="tmBpmInput" class="input-num" min="40" max="240" step="0.5" value="115" />
+          </div>
+          <div>
+            <label class="field-label"><span>Fórmula</span></label>
+            <select id="tmSigInput" class="input-num">
+              <option value="4/4" selected>4/4</option>
+              <option value="3/4">3/4</option>
+              <option value="2/4">2/4</option>
+              <option value="6/8">6/8</option>
+              <option value="5/4">5/4</option>
+              <option value="7/8">7/8</option>
+              <option value="8/4">8/4 (Oito)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:5px;">
+          <button type="button" class="chip" style="flex:1;" onclick="addOrUpdateTempoChange()">+ Mudança no Compasso</button>
+          <button type="button" class="chip" style="flex:1;" onclick="addTempoChangeAtPlayhead()">📍 Mudar na Agulha</button>
+        </div>
+
+        <div id="tempoMapList" class="cue-list" style="max-height:130px;"></div>
+      </div>
     </aside>
   </div>
 
@@ -763,7 +801,8 @@
           BPM:
           <input type="number" id="bpmInput" class="input-num" value="115" min="50" max="220" style="width:54px;padding:3px 5px;" onchange="updateBpm(this.value)" />
         </label>
-        <button type="button" id="btnAutoBpm" class="btn btn-amber" onclick="detectBpmAndDownbeatFromBuffer(true)" title="Detectar andamento (BPM) e 1º tempo automaticamente a partir do áudio">⚡ Auto BPM</button>
+        <button type="button" id="btnAutoBpm" class="btn btn-amber" onclick="detectBpmAndDownbeatFromBuffer(true)" title="Detectar andamento médio (BPM) e 1º tempo automaticamente">⚡ Auto BPM</button>
+        <button type="button" id="btnVarBpm" class="btn" onclick="detectVariableBpmFromBuffer()" title="Detectar variações de BPM ao longo da música (BPM variável por trecho/compasso)">📈 BPM Variável</button>
         <button type="button" id="btnTapTempo" class="btn" onclick="handleTapTempo()" title="Clique no ritmo da música (ou tecla T) para medir o BPM">👆 Tap</button>
         <label style="font-size:0.73rem;font-weight:700;color:var(--text-sub);display:flex;align-items:center;gap:3px;" title="Resolução da timeline: Livre (1 milissegundo) ou alinhada à grade musical">
           🧲 Grade:
@@ -992,6 +1031,9 @@
         bpm: 115,
         audioOffset: 0.430,
         duration: roundMs(8 * OITO), // 33.391s (8 Oitos exatos a 115 BPM)
+        tempoMap: [
+          { id: 'tm_1', bar: 1, bpm: 115, num: 4, den: 4 }
+        ],
         dancers,
         cues
       };
@@ -1124,8 +1166,93 @@
       }
     }
 
-    function getBeatDuration() {
-      return 60 / Math.max(40, project.bpm || 120);
+    function ensureTempoMap() {
+      if (!Array.isArray(project.tempoMap) || project.tempoMap.length === 0) {
+        project.tempoMap = [{ id: 'tm_1', bar: 1, bpm: project.bpm || 115, num: 4, den: 4 }];
+      }
+      project.tempoMap.sort((a, b) => a.bar - b.bar);
+      project.tempoMap[0].bar = 1;
+      project.bpm = project.tempoMap[0].bpm;
+    }
+
+    // Constrói a grade musical completa (compassos, tempos, oitos e mudanças de andamento/fórmula)
+    function buildMusicalGrid() {
+      ensureTempoMap();
+      const map = project.tempoMap;
+      const maxDur = Math.max(8, project.duration || 34) + 10;
+      const beats = [];
+      const bars = [];
+      let curTime = 0;
+      let barNum = 1;
+      let totalBeatIdx = 0;
+      let tmIdx = 0;
+
+      while (curTime <= maxDur && barNum <= 600) {
+        while (tmIdx + 1 < map.length && barNum >= map[tmIdx + 1].bar) {
+          tmIdx++;
+        }
+        const seg = map[tmIdx];
+        const num = Math.max(1, Number(seg.num) || 4);
+        const den = Math.max(1, Number(seg.den) || 4);
+        const bpm = Math.max(30, Number(seg.bpm) || 115);
+        // Duração de cada pulso do compasso (em 6/8 ou 7/8 o pulso é colcheia = 4/8 da semínima)
+        const pulseSec = (60 / bpm) * (4 / den);
+        const isChangeBar = (seg.bar === barNum);
+
+        bars.push({
+          bar: barNum,
+          startTime: curTime,
+          endTime: curTime + num * pulseSec,
+          bpm,
+          num,
+          den,
+          isTempoChange: isChangeBar,
+          tmIdx
+        });
+
+        for (let b = 1; b <= num; b++) {
+          const eightNum = Math.floor(totalBeatIdx / 8) + 1;
+          const beatInEight = (totalBeatIdx % 8) + 1;
+          beats.push({
+            beatIndex: totalBeatIdx,
+            time: curTime,
+            duration: pulseSec,
+            bar: barNum,
+            beatInBar: b,
+            num,
+            den,
+            bpm,
+            eightNum,
+            beatInEight,
+            isBarStart: b === 1,
+            isEightStart: beatInEight === 1,
+            isTempoChange: isChangeBar && b === 1,
+            tmIdx
+          });
+          curTime += pulseSec;
+          totalBeatIdx++;
+        }
+        barNum++;
+      }
+      return { beats, bars };
+    }
+
+    function getMusicalInfoAtTime(t) {
+      const grid = buildMusicalGrid();
+      const beats = grid.beats;
+      if (!beats.length) {
+        return { beatIndex: 0, time: 0, duration: 60 / 115, bar: 1, beatInBar: 1, num: 4, den: 4, bpm: 115, eightNum: 1, beatInEight: 1 };
+      }
+      let chosen = beats[0];
+      for (let i = 0; i < beats.length; i++) {
+        if (t >= beats[i].time - 0.0005) chosen = beats[i];
+        else break;
+      }
+      return { ...chosen, grid };
+    }
+
+    function getBeatDuration(t = currentTime) {
+      return getMusicalInfoAtTime(t).duration;
     }
 
     function normalizeAngleDiff(fromDeg, toDeg) {
@@ -2020,32 +2147,50 @@
         tlCtx.fillText(label, x + 3, 12);
       }
 
-      // 1B. Linha "Oito" (y = 18..36): exibe APENAS o número do Oito (1, 2, 3...) sem repetir a palavra "Oito" nem o tempo
-      let beatIdx = 0;
-      for (let t = 0; t <= project.duration + 0.01; t += beatSec) {
-        if (t >= startT - beatSec && t <= endT + beatSec) {
-          const x = timeToX(t, w);
-          const isEightStart = (beatIdx % 8 === 0);
-          tlCtx.strokeStyle = isEightStart ? 'rgba(233, 196, 106, 0.72)' : 'rgba(248, 249, 250, 0.11)';
-          tlCtx.lineWidth = isEightStart ? 1.6 : 1;
-          tlCtx.beginPath();
-          tlCtx.moveTo(x, 18);
-          tlCtx.lineTo(x, h);
-          tlCtx.stroke();
+      // 1B. Linha "Oito" (y = 18..36): exibe o número do Oito (1, 2, 3...), compassos e bandeiras de mudança de BPM/Fórmula
+      const mGrid = buildMusicalGrid();
+      mGrid.beats.forEach((b) => {
+        if (b.time < startT - b.duration || b.time > endT + b.duration) return;
+        const x = timeToX(b.time, w);
+        const isEightStart = b.isEightStart;
+        const isBarStart = b.isBarStart;
 
-          if (isEightStart) {
-            const eightNum = Math.floor(beatIdx / 8) + 1;
-            tlCtx.fillStyle = '#E9C46A';
-            tlCtx.font = '800 11px Epilogue, sans-serif';
-            tlCtx.fillText(`${eightNum}`, x + 5, 31);
-          } else if ((w - TL_HEADER_W) / (visDur / beatSec) > 18) {
-            tlCtx.fillStyle = 'rgba(176, 196, 192, 0.55)';
-            tlCtx.font = '600 8.5px Inter, sans-serif';
-            tlCtx.fillText(`·${(beatIdx % 8) + 1}`, x + 2, 31);
-          }
+        tlCtx.strokeStyle = b.isTempoChange
+          ? '#E76F51'
+          : (isEightStart ? 'rgba(233, 196, 106, 0.75)' : (isBarStart ? 'rgba(42, 157, 143, 0.45)' : 'rgba(248, 249, 250, 0.10)'));
+        tlCtx.lineWidth = b.isTempoChange ? 2.2 : (isEightStart ? 1.6 : 1);
+        tlCtx.beginPath();
+        tlCtx.moveTo(x, 18);
+        tlCtx.lineTo(x, h);
+        tlCtx.stroke();
+
+        if (isEightStart) {
+          tlCtx.fillStyle = '#E9C46A';
+          tlCtx.font = '800 11px Epilogue, sans-serif';
+          tlCtx.fillText(`${b.eightNum}`, x + 4, 31);
+        } else if (isBarStart && (w - TL_HEADER_W) / (visDur / b.duration) > 10) {
+          tlCtx.fillStyle = 'rgba(42, 157, 143, 0.85)';
+          tlCtx.font = '700 8.5px Inter, sans-serif';
+          tlCtx.fillText(`c${b.bar}`, x + 3, 31);
+        } else if ((w - TL_HEADER_W) / (visDur / b.duration) > 22) {
+          tlCtx.fillStyle = 'rgba(176, 196, 192, 0.5)';
+          tlCtx.font = '600 8px Inter, sans-serif';
+          tlCtx.fillText(`·${b.beatInBar}`, x + 2, 31);
         }
-        beatIdx++;
-      }
+
+        // Bandeira de Mudança de BPM / Compasso na timeline (arrastável!)
+        if (b.isTempoChange) {
+          const badgeTxt = `♩${b.bpm} (${b.num}/${b.den})`;
+          tlCtx.save();
+          tlCtx.font = '800 9px Inter, sans-serif';
+          const tw = tlCtx.measureText(badgeTxt).width + 10;
+          tlCtx.fillStyle = '#E76F51';
+          tlCtx.fillRect(x, 37, tw, 15);
+          tlCtx.fillStyle = '#F8F9FA';
+          tlCtx.fillText(badgeTxt, x + 5, 48);
+          tlCtx.restore();
+        }
+      });
 
       // 2. Faixa de Forma de Onda do Áudio (Waveform: y = 38..78)
       const waveY = 58;
@@ -2183,6 +2328,20 @@
       const trackY = 84;
       const trackH = 40;
 
+      // Check clicking/dragging a Tempo Change Flag (y in 36..54)
+      const mGrid = buildMusicalGrid();
+      for (let i = 0; i < mGrid.bars.length; i++) {
+        const barObj = mGrid.bars[i];
+        if (!barObj.isTempoChange || barObj.tmIdx === 0) continue;
+        const xb = timeToX(barObj.startTime, w);
+        if (mx >= xb - 4 && mx <= xb + 75 && my >= 36 && my <= 54) {
+          tlDragType = 'tempoFlag';
+          tlDragCueIndex = barObj.tmIdx;
+          tlCanvas.setPointerCapture(e.pointerId);
+          return;
+        }
+      }
+
       // Check ◆ Start Move or ■ Arrive handles
       for (let i = 0; i < project.cues.length; i++) {
         const c = project.cues[i];
@@ -2245,6 +2404,34 @@
         cue.arriveTime = Math.max(cue.startTime, Math.min(maxT, t));
         syncCueInspector();
         renderCueList();
+      } else if (tlDragType === 'tempoFlag' && tlDragCueIndex > 0) {
+        // Arrastar bandeira de andamento na timeline muda o compasso onde ela entra (ou ajusta o BPM anterior se segurar Shift)
+        const rawT = xToTime(mx, tlCanvas.width);
+        const info = getMusicalInfoAtTime(rawT);
+        const tmNode = project.tempoMap[tlDragCueIndex];
+        const prevNode = project.tempoMap[tlDragCueIndex - 1];
+        if (tmNode && prevNode) {
+          if (e.shiftKey) {
+            // Shift + Arraste: recalcula o BPM do trecho anterior para que este compasso caia exatamente em rawT
+            const prevBarInfo = info.grid.bars.find((b) => b.bar === prevNode.bar);
+            const prevTime = prevBarInfo ? prevBarInfo.startTime : 0;
+            const barsDelta = Math.max(1, tmNode.bar - prevNode.bar);
+            const pulses = barsDelta * (prevNode.num || 4);
+            const dtSec = Math.max(0.5, rawT - prevTime);
+            const newBpm = Math.round(((60 * pulses * (4 / (prevNode.den || 4))) / dtSec) * 2) / 2;
+            prevNode.bpm = Math.max(40, Math.min(240, newBpm));
+            if (tlDragCueIndex - 1 === 0) {
+              project.bpm = prevNode.bpm;
+              document.getElementById('bpmInput').value = project.bpm;
+            }
+          } else {
+            const nextNode = project.tempoMap[tlDragCueIndex + 1];
+            const minBar = prevNode.bar + 1;
+            const maxBar = nextNode ? nextNode.bar - 1 : 500;
+            tmNode.bar = Math.max(minBar, Math.min(maxBar, info.bar));
+          }
+          renderTempoMapList();
+        }
       }
     });
 
@@ -2476,15 +2663,191 @@
       if (snapGridMode === 'ms') {
         return Math.round(clamped * 1000) / 1000; // 1 milissegundo (0.001s)
       }
-      const beatSec = getBeatDuration();
-      let gridSec = beatSec;
-      if (snapGridMode === '16th') gridSec = beatSec / 4;       // Semicolcheia
-      else if (snapGridMode === 'triplet') gridSec = beatSec / 3; // Tercina Swing
-      else if (snapGridMode === '8th') gridSec = beatSec / 2;    // Colcheia
-      else if (snapGridMode === 'beat') gridSec = beatSec;       // Semínima
-      else if (snapGridMode === 'eight') gridSec = beatSec * 8;  // Frase de 8 tempos
-      const snapped = Math.round(clamped / gridSec) * gridSec;
+      const info = getMusicalInfoAtTime(clamped);
+      if (snapGridMode === 'eight') {
+        // Snap ao início do Oito mais próximo na grade variável
+        const eightStarts = info.grid.beats.filter((b) => b.isEightStart);
+        let best = 0;
+        let minDiff = 9999;
+        eightStarts.forEach((b) => {
+          const d = Math.abs(b.time - clamped);
+          if (d < minDiff) { minDiff = d; best = b.time; }
+        });
+        return Math.round(best * 1000) / 1000;
+      }
+      // Subdivisões dentro do pulso atual (respeitando BPM e fórmula de compasso variáveis!)
+      let sub = 1;
+      if (snapGridMode === '16th') sub = 4;       // Semicolcheia
+      else if (snapGridMode === 'triplet') sub = 3; // Tercina Swing
+      else if (snapGridMode === '8th') sub = 2;    // Colcheia
+      else if (snapGridMode === 'beat') sub = 1;   // Semínima / Pulso
+
+      const stepSec = info.duration / sub;
+      const offsetInBeat = clamped - info.time;
+      const snapped = info.time + Math.round(offsetInBeat / stepSec) * stepSec;
       return Math.round(Math.max(0, Math.min(project.duration, snapped)) * 1000) / 1000;
+    }
+
+    function renderTempoMapList() {
+      ensureTempoMap();
+      const box = document.getElementById('tempoMapList');
+      if (!box) return;
+      const grid = buildMusicalGrid();
+      box.innerHTML = project.tempoMap.map((tm, idx) => {
+        const barObj = grid.bars.find((b) => b.bar === tm.bar);
+        const tSec = barObj ? barObj.startTime : 0;
+        return `
+          <div class="cue-item" onclick="selectTempoNode(${idx})">
+            <div class="cue-item-top">
+              <span>Compasso ${tm.bar} (${tSec.toFixed(2)}s)</span>
+              <span style="color:var(--accent-amber);">♩ ${tm.bpm} BPM • ${tm.num}/${tm.den}</span>
+            </div>
+            <div class="cue-item-sub">
+              <span>${idx === 0 ? 'Andamento Base Inicial' : 'Mudança de Andamento/Fórmula (arraste na timeline)'}</span>
+              ${idx > 0 ? `<button type="button" class="btn" style="padding:0 5px;font-size:0.65rem;color:#f87171;" onclick="event.stopPropagation();removeTempoNode(${idx})">✕</button>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectTempoNode(idx) {
+      ensureTempoMap();
+      const tm = project.tempoMap[idx];
+      if (!tm) return;
+      document.getElementById('tmBarInput').value = tm.bar;
+      document.getElementById('tmBpmInput').value = tm.bpm;
+      document.getElementById('tmSigInput').value = `${tm.num}/${tm.den}`;
+      const grid = buildMusicalGrid();
+      const barObj = grid.bars.find((b) => b.bar === tm.bar);
+      if (barObj) seekTo(barObj.startTime);
+    }
+
+    function addOrUpdateTempoChange() {
+      ensureTempoMap();
+      const bar = Math.max(1, Math.round(Number(document.getElementById('tmBarInput').value) || 1));
+      const bpm = Math.max(40, Math.min(240, Math.round((Number(document.getElementById('tmBpmInput').value) || 115) * 2) / 2));
+      const [numStr, denStr] = (document.getElementById('tmSigInput').value || '4/4').split('/');
+      const num = Number(numStr) || 4;
+      const den = Number(denStr) || 4;
+
+      const existing = project.tempoMap.find((x) => x.bar === bar);
+      if (existing) {
+        existing.bpm = bpm;
+        existing.num = num;
+        existing.den = den;
+      } else {
+        project.tempoMap.push({ id: 'tm_' + Date.now().toString(36), bar, bpm, num, den });
+      }
+      ensureTempoMap();
+      document.getElementById('bpmInput').value = project.bpm;
+      renderTempoMapList();
+    }
+
+    function addTempoChangeAtPlayhead() {
+      const info = getMusicalInfoAtTime(currentTime);
+      document.getElementById('tmBarInput').value = info.bar;
+      addOrUpdateTempoChange();
+    }
+
+    function removeTempoNode(idx) {
+      ensureTempoMap();
+      if (idx <= 0 || idx >= project.tempoMap.length) return;
+      project.tempoMap.splice(idx, 1);
+      renderTempoMapList();
+    }
+
+    // Detector Automático de BPM Variável ao longo da música (por janelas de compassos)
+    function detectVariableBpmFromBuffer() {
+      if (!audioBuffer) return;
+      ensureTempoMap();
+      const baseSig = project.tempoMap[0] || { num: 4, den: 4 };
+      const num = baseSig.num || 4;
+      const den = baseSig.den || 4;
+
+      const raw = audioBuffer.getChannelData(0);
+      const sr = audioBuffer.sampleRate;
+      const envRate = 100;
+      const hop = Math.max(1, Math.floor(sr / envRate));
+      const offsetSec = Math.max(0, Number(project.audioOffset || 0));
+      const maxDur = Math.min(project.duration, audioBuffer.duration - offsetSec);
+
+      // Janelas de ~6 segundos para medir o BPM local ao longo da faixa
+      const winSec = 6.0;
+      const newMap = [];
+      let curTime = 0;
+      let curBar = 1;
+      let prevBpm = project.bpm || 115;
+
+      while (curTime < maxDur - 2.0) {
+        const startSample = Math.floor((offsetSec + curTime) * sr);
+        const endSample = Math.min(raw.length, Math.floor((offsetSec + curTime + winSec) * sr));
+        const nFrames = Math.floor((endSample - startSample) / hop);
+        if (nFrames < envRate * 2) break;
+
+        const onset = new Float32Array(nFrames);
+        let prevE = 0;
+        for (let i = 0; i < nFrames; i++) {
+          let sum = 0;
+          const base = startSample + i * hop;
+          for (let j = 0; j < hop; j += 4) {
+            const s = raw[base + j] || 0;
+            sum += s * s;
+          }
+          const e = Math.sqrt(sum / (hop / 4));
+          onset[i] = Math.max(0, e - prevE);
+          prevE = e;
+        }
+
+        // Autocorrelação local restrita em torno do andamento esperado (78 a 176 BPM)
+        const minLag = Math.floor((60 / 176) * envRate);
+        const maxLag = Math.ceil((60 / 78) * envRate);
+        let bestLag = Math.round((60 / prevBpm) * envRate);
+        let bestScore = -1;
+
+        for (let lag = minLag; lag <= maxLag; lag++) {
+          let score = 0;
+          for (let i = 0; i < nFrames - lag * 2; i++) {
+            score += onset[i] * onset[i + lag] + 0.5 * onset[i] * onset[i + lag * 2];
+          }
+          const candBpm = (60 * envRate) / lag;
+          // Suavização de continuidade com o trecho anterior para evitar saltos de dobro/metade
+          if (Math.abs(candBpm - prevBpm) <= 18) score *= 1.18;
+          if (score > bestScore) {
+            bestScore = score;
+            bestLag = lag;
+          }
+        }
+
+        const localBpm = Math.round(((60 * envRate) / bestLag) * 2) / 2;
+        if (curBar === 1 || Math.abs(localBpm - prevBpm) >= 1.5) {
+          newMap.push({
+            id: 'tm_' + curBar,
+            bar: curBar,
+            bpm: localBpm,
+            num,
+            den
+          });
+          prevBpm = localBpm;
+        }
+
+        // Avança 2 compassos
+        const pulseSec = (60 / prevBpm) * (4 / den);
+        curTime += 2 * num * pulseSec;
+        curBar += 2;
+      }
+
+      if (newMap.length > 0) {
+        project.tempoMap = newMap;
+        ensureTempoMap();
+        document.getElementById('bpmInput').value = project.bpm;
+        renderTempoMapList();
+        const btn = document.getElementById('btnVarBpm');
+        if (btn) {
+          btn.textContent = `📈 ${newMap.length} Trechos`;
+          setTimeout(() => { btn.textContent = '📈 BPM Variável'; }, 2600);
+        }
+      }
     }
 
     function markCueStartNow() {
@@ -2592,8 +2955,13 @@
     }
 
     function updateBpm(val) {
-      project.bpm = Math.max(40, Math.min(240, Number(val) || 120));
+      project.bpm = Math.max(40, Math.min(240, Number(val) || 115));
       document.getElementById('bpmInput').value = project.bpm;
+      ensureTempoMap();
+      const info = getMusicalInfoAtTime(currentTime);
+      const activeNode = project.tempoMap[info.tmIdx || 0] || project.tempoMap[0];
+      activeNode.bpm = project.bpm;
+      renderTempoMapList();
     }
 
     function updateDuration(val) {
@@ -2821,17 +3189,17 @@
     function syncAllUI() {
       renderDancerList();
       renderCueList();
+      renderTempoMapList();
       syncDancerInspector();
       syncCueInspector();
     }
 
     function updateHUD() {
-      const beatSec = getBeatDuration();
-      const totalBeats = Math.floor(currentTime / beatSec);
-      const eightNum = Math.floor(totalBeats / 8) + 1;
-      const beatInEight = (totalBeats % 8) + 1;
+      const info = getMusicalInfoAtTime(currentTime);
+      const eightNum = info.eightNum;
+      const beatInEight = info.beatInEight;
 
-      document.getElementById('hudEightText').textContent = `Oito ${eightNum} • Tempo ${beatInEight}`;
+      document.getElementById('hudEightText').textContent = `Oito ${eightNum} • Tempo ${beatInEight}  |  Comp. ${info.bar} (${info.num}/${info.den} • ${info.bpm} BPM)`;
       const leds = document.getElementById('eightLeds').children;
       for (let i = 0; i < 8; i++) {
         leds[i].className = 'beat-led' + ((i + 1 === beatInEight) ? (beatInEight === 1 ? ' active-one' : ' active') : '');
@@ -2875,11 +3243,11 @@
           }
         }
 
-        const beatSec = getBeatDuration();
-        const curBeat = Math.floor(currentTime / beatSec);
+        const info = getMusicalInfoAtTime(currentTime);
+        const curBeat = info.beatIndex;
         if (curBeat !== lastBeatPlayed) {
           lastBeatPlayed = curBeat;
-          playTapClick((curBeat % 8) + 1);
+          playTapClick(info.beatInBar === 1 ? 1 : info.beatInEight);
         }
 
         if (currentTime >= project.duration) {
