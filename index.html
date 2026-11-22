@@ -5,13 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>StageTap Cue — Marcação de Palco e Coreografia de Sapateado 2D & 3D</title>
   <meta name="description" content="Estúdio interativo de marcação de palco (stage blocking) e formações para sapateado em 2D e 3D com timeline híbrida, contagem em Oitos, metrônomo e áudio." />
-  <meta name="theme-color" content="#f43f5e" />
+  <meta name="theme-color" content="#E76F51" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
+
+  <!-- Tipografia Criativo & Agência: Epilogue + Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
   <!-- Open Graph / WhatsApp Preview -->
   <meta property="og:type" content="website" />
@@ -36,39 +41,49 @@
 
   <style>
     :root {
-      --bg-app: #0b0914;
-      --bg-panel: #131022;
-      --bg-card: #1b1730;
-      --bg-input: #0e0b1a;
-      --border: rgba(255, 255, 255, 0.11);
-      --border-strong: rgba(244, 63, 94, 0.45);
-      --text-main: #f8fafc;
-      --text-sub: #cbd5e1;
-      --text-muted: #94a3b8;
-      --accent: #f43f5e;
-      --accent-hover: #fb7185;
-      --accent-amber: #f59e0b;
-      --accent-cyan: #38bdf8;
-      --accent-emerald: #10b981;
-      --accent-violet: #a855f7;
+      --font-title: 'Epilogue', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --bg-app: #264653;
+      --bg-panel: rgba(24, 45, 54, 0.88);
+      --bg-card: rgba(38, 70, 83, 0.78);
+      --bg-input: rgba(16, 32, 39, 0.88);
+      --border: rgba(248, 249, 250, 0.16);
+      --border-strong: rgba(231, 111, 81, 0.58);
+      --text-main: #F8F9FA;
+      --text-sub: #e2ece9;
+      --text-muted: #b0c4c0;
+      --accent: #E76F51;
+      --accent-hover: #F4A261;
+      --accent-amber: #E9C46A;
+      --accent-cyan: #2A9D8F;
+      --accent-emerald: #2A9D8F;
+      --accent-violet: #F4A261;
     }
 
     html.light {
-      --bg-app: #f1f5f9;
-      --bg-panel: #ffffff;
-      --bg-card: #f8fafc;
+      --bg-app: #F8F9FA;
+      --bg-panel: rgba(248, 249, 250, 0.90);
+      --bg-card: rgba(255, 255, 255, 0.88);
       --bg-input: #ffffff;
-      --border: rgba(15, 23, 42, 0.12);
-      --border-strong: rgba(244, 63, 94, 0.5);
-      --text-main: #0f172a;
-      --text-sub: #334155;
-      --text-muted: #64748b;
+      --border: rgba(38, 70, 83, 0.18);
+      --border-strong: rgba(231, 111, 81, 0.6);
+      --text-main: #264653;
+      --text-sub: #2A9D8F;
+      --text-muted: #52796f;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    h1, h2, h3, h4, .brand-title, .section-title { font-family: var(--font-title); }
+    body, p, span, a, input, button, select { font-family: var(--font-body); }
+
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: var(--bg-app);
+      background-color: var(--bg-app);
+      background-image:
+        linear-gradient(180deg, rgba(20, 38, 46, 0.84) 0%, rgba(15, 29, 35, 0.90) 100%),
+        url('https://raw.githubusercontent.com/GlauberLASantiago/gl-cores-fontes-e-fundos/main/danca/01_palco_sapateado.jpg');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
       color: var(--text-main);
       height: 100vh;
       display: flex;
@@ -76,11 +91,17 @@
       overflow: hidden;
       user-select: none;
     }
+    html.light body {
+      background-image:
+        linear-gradient(180deg, rgba(248, 249, 250, 0.86) 0%, rgba(233, 196, 106, 0.22) 100%),
+        url('https://raw.githubusercontent.com/GlauberLASantiago/gl-cores-fontes-e-fundos/main/danca/01_palco_sapateado.jpg');
+    }
 
     /* TOPBAR */
     .topbar {
-      height: 54px;
+      height: 52px;
       background: var(--bg-panel);
+      backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
@@ -98,14 +119,14 @@
       width: 34px;
       height: 34px;
       border-radius: 9px;
-      background: linear-gradient(135deg, #f43f5e, #f59e0b);
+      background: linear-gradient(135deg, #E76F51, #F4A261);
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 900;
-      color: #fff;
+      color: #F8F9FA;
       font-size: 0.95rem;
-      box-shadow: 0 4px 12px rgba(244, 63, 94, 0.35);
+      box-shadow: 0 4px 12px rgba(231, 111, 81, 0.38);
     }
     .brand-title {
       font-weight: 800;
@@ -310,7 +331,9 @@
     /* STAGE VIEWPORT */
     .stage-area {
       position: relative;
-      background: radial-gradient(circle at center, #17132b 0%, #090710 100%);
+      background:
+        radial-gradient(circle at center, rgba(38, 70, 83, 0.58) 0%, rgba(16, 31, 38, 0.86) 100%),
+        url('https://raw.githubusercontent.com/GlauberLASantiago/gl-cores-fontes-e-fundos/main/danca/01_palco_sapateado.jpg') center/cover no-repeat;
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -415,35 +438,36 @@
 
     /* TIMELINE FOOTER */
     .timeline-dock {
-      height: 215px;
+      height: 205px;
       background: var(--bg-panel);
+      backdrop-filter: blur(12px);
       border-top: 1px solid var(--border);
       display: flex;
       flex-direction: column;
       flex-shrink: 0;
     }
     .transport-bar {
-      height: 44px;
-      padding: 0 14px;
+      min-height: 42px;
+      padding: 4px 12px;
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
+      gap: 8px;
       flex-wrap: wrap;
     }
     .transport-group {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
     }
     .time-readout {
       font-family: monospace;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       font-weight: 800;
-      color: var(--accent-cyan);
+      color: var(--accent-amber);
       background: var(--bg-input);
-      padding: 4px 9px;
+      padding: 4px 8px;
       border-radius: 6px;
       border: 1px solid var(--border);
     }
@@ -451,13 +475,35 @@
       flex: 1;
       position: relative;
       overflow: hidden;
-      background: #0d0a18;
+      background: rgba(16, 31, 38, 0.92);
     }
     #timelineCanvas {
       width: 100%;
       height: 100%;
       display: block;
       cursor: pointer;
+    }
+    .inst-footer {
+      background: rgba(15, 29, 35, 0.96);
+      border-top: 1px solid var(--border);
+      padding: 4px 14px;
+      font-size: 0.69rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .inst-footer a {
+      color: var(--accent-amber);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .inst-footer a:hover {
+      color: var(--accent);
+      text-decoration: underline;
     }
 
     .cue-list {
@@ -746,17 +792,38 @@
         </label>
         <button type="button" class="btn" style="padding:4px 7px;" onclick="setAudioOffsetAtPlayhead()" title="Faz o ponto atual do áudio virar o segundo 00:00.000 (Tempo 1)">🎯 1º Tempo Aqui</button>
         <span id="audioFileName" style="font-size:0.71rem;color:var(--accent-amber);font-weight:700;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🎷 Swing Jazz Demo</span>
-        <select id="speedSelect" class="input-num" style="width:60px;padding:3px 4px;" onchange="updatePlaybackSpeed(this.value)" title="Velocidade de ensaio">
+        <select id="speedSelect" class="input-num" style="width:58px;padding:3px 4px;" onchange="updatePlaybackSpeed(this.value)" title="Velocidade de ensaio">
           <option value="0.5">0.5x</option>
           <option value="0.75">0.75x</option>
           <option value="1" selected>1.0x</option>
           <option value="1.25">1.25x</option>
         </select>
+        <label style="font-size:0.72rem;font-weight:700;color:var(--text-sub);display:flex;align-items:center;gap:3px;" title="Zoom horizontal da Timeline (ou use Ctrl + Roda do Mouse)">
+          🔍 Zoom:
+          <input type="range" id="tlZoomRange" min="1" max="8" step="0.25" value="1" style="width:62px;" oninput="updateTimelineZoom(this.value)" />
+        </label>
+        <label style="font-size:0.72rem;font-weight:700;color:var(--text-sub);display:flex;align-items:center;gap:3px;" title="Rolagem horizontal da Timeline">
+          ↔
+          <input type="range" id="tlScrollRange" min="0" max="100" step="0.5" value="0" style="width:66px;" oninput="updateTimelineScroll(this.value)" />
+        </label>
       </div>
     </div>
 
     <div class="timeline-canvas-wrap">
       <canvas id="timelineCanvas"></canvas>
+    </div>
+
+    <div class="inst-footer">
+      <div>
+        Desenvolvido pelo professor <strong>Glauber Santiago</strong> — DAC/UFSCar ·
+        <a href="https://aprenda-musica-comigo.web.app/" target="_blank" rel="noopener noreferrer">aprenda-musica-comigo.web.app</a> •
+        <a href="https://servidores.ufscar.br/glauber/" target="_blank" rel="noopener noreferrer">servidores.ufscar.br/glauber/</a> •
+        <a href="https://glauberia.web.app/" target="_blank" rel="noopener noreferrer">https://glauberia.web.app/</a>
+      </div>
+      <div>
+        Apoio: Grupo de Estudos e Pesquisas sobre Inovação em Educação, Tecnologias e Linguagens (Grupo Horizonte-UFSCar) —
+        <a href="https://grupohorizonte.ufscar.br/" target="_blank" rel="noopener noreferrer">grupohorizonte.ufscar.br</a>
+      </div>
     </div>
   </footer>
 
@@ -765,8 +832,8 @@
     // 1. ESTADO GLOBAL DO PROJETO (STAGETAP CUE)
     // =========================================================================
     const DANCER_COLORS = [
-      '#f43f5e', '#f59e0b', '#10b981', '#38bdf8',
-      '#a855f7', '#eab308', '#ec4899', '#14b8a6',
+      '#E76F51', '#E9C46A', '#2A9D8F', '#F4A261',
+      '#38bdf8', '#a855f7', '#ec4899', '#10b981',
       '#fb923c', '#6366f1', '#84cc16', '#06b6d4'
     ];
 
@@ -836,6 +903,11 @@
         { id: 'd6', code: 'F', name: 'F - Fê', color: DANCER_COLORS[5] }
       ];
 
+      // Em 115 BPM: 1 tempo (beat) = 60/115 = 0.521739s | 1 Oito (8 tempos) = 4.173913s
+      const B = 60 / 115;
+      const OITO = B * 8; // 4.173913s
+      const roundMs = (v) => Math.round(v * 1000) / 1000;
+
       // Cues use stage coordinates: x in [-1.35..1.35] (|x|>1.0 = Wings/Coxias), z in [-0.85..0.85] (-z = Upstage/Fundo, +z = Downstage/Plateia)
       const cues = [
         {
@@ -856,9 +928,9 @@
         {
           id: 'cue_2',
           name: 'Cue 2 — Linha do Shim Sham',
-          step: 'Shim Sham Chorus (8 Tempos • Frente para a Plateia)',
-          startTime: 1.0,
-          arriveTime: 4.0,
+          step: 'Shim Sham Chorus (Oito 2 • Frente para a Plateia)',
+          startTime: roundMs(2 * B),      // 1.043s (Oito 1, Tempo 3)
+          arriveTime: roundMs(1 * OITO),  // 4.174s (Cravado no Tempo 1 do Oito 2!)
           positions: {
             d1: { x: -0.75, z: 0.10, angle: 0, ctrlX: -0.95, ctrlZ: -0.35, offsetBeats: 0, step: '' },
             d2: { x: -0.45, z: 0.10, angle: 0, ctrlX: -0.80, ctrlZ: 0.10, offsetBeats: 0, step: '' },
@@ -872,8 +944,8 @@
           id: 'cue_3',
           name: 'Cue 3 — Cunha (V) & Cruzamento Curvo',
           step: 'Time Step Duplo + Buffalo (Cruzamento em Curva)',
-          startTime: 8.0,
-          arriveTime: 12.0,
+          startTime: roundMs(2 * OITO),   // 8.348s (Início do Oito 3)
+          arriveTime: roundMs(3 * OITO),  // 12.522s (Cravado no Tempo 1 do Oito 4!)
           positions: {
             d1: { x: -0.70, z: -0.35, angle: 15, ctrlX: -0.85, ctrlZ: -0.15, offsetBeats: 0, step: 'Buffalo Esq' },
             d2: { x: 0.38, z: 0.05, angle: -15, ctrlX: -0.05, ctrlZ: -0.45, offsetBeats: 0, step: 'Cruzamento p/ Dir' },
@@ -887,8 +959,8 @@
           id: 'cue_4',
           name: 'Cue 4 — Roda de Desafios (Frente/Costas)',
           step: 'Cânone em Roda: Cramp Roll + Giro de Costas / Frente',
-          startTime: 16.0,
-          arriveTime: 20.0,
+          startTime: roundMs(4 * OITO),   // 16.696s (Início do Oito 5)
+          arriveTime: roundMs(5 * OITO),  // 20.870s (Cravado no Tempo 1 do Oito 6!)
           positions: {
             d1: { x: -0.55, z: -0.35, angle: 135, ctrlX: -0.65, ctrlZ: -0.35, offsetBeats: 0, step: 'Cânone 1' },
             d2: { x: 0.0, z: -0.55, angle: 180, ctrlX: 0.25, ctrlZ: -0.40, offsetBeats: 1, step: 'Cânone 2 (Costas p/ Plateia)' },
@@ -902,8 +974,8 @@
           id: 'cue_5',
           name: 'Cue 5 — Finale na Ribalta (2 Filas)',
           step: 'Pullback + Wings Simultâneos + Break Final!',
-          startTime: 24.0,
-          arriveTime: 27.5,
+          startTime: roundMs(6 * OITO),   // 25.043s (Início do Oito 7)
+          arriveTime: roundMs(7 * OITO),  // 29.217s (Cravado no Tempo 1 do Oito 8!)
           positions: {
             d1: { x: -0.60, z: 0.48, angle: 0, ctrlX: -0.62, ctrlZ: 0.10, offsetBeats: 0, step: 'Pullback Frontal' },
             d3: { x: 0.0, z: 0.48, angle: 0, ctrlX: 0.28, ctrlZ: 0.10, offsetBeats: 0, step: 'Wings Centro' },
@@ -919,13 +991,13 @@
         title: 'Shim Sham Classic & Canon',
         bpm: 115,
         audioOffset: 0.430,
-        duration: 34,
+        duration: roundMs(8 * OITO), // 33.391s (8 Oitos exatos a 115 BPM)
         dancers,
         cues
       };
       activeCueIndex = 1;
       selectedDancerId = 'd1';
-      currentTime = 4.0;
+      currentTime = cues[1].arriveTime;
       document.getElementById('bpmInput').value = project.bpm;
       document.getElementById('durationInput').value = project.duration;
       const offInp = document.getElementById('audioOffsetInput');
@@ -1830,22 +1902,65 @@
     }
 
     // =========================================================================
-    // 6. TIMELINE INTERATIVA (OITOS + WAVEFORM + INÍCIO DA TRANSIÇÃO / CHEGADA)
+    // 6. TIMELINE INTERATIVA (ZOOM, ROLAGEM, RÉGUA DE TEMPO + LINHA DE OITOS)
     // =========================================================================
     const tlCanvas = document.getElementById('timelineCanvas');
     const tlCtx = tlCanvas.getContext('2d');
     let tlDragType = null; // 'scrub' | 'cueStart' | 'cueArrive'
     let tlDragCueIndex = -1;
+    let tlZoom = 1.0;        // 1x a 8x
+    let tlScrollRatio = 0.0; // 0..1
+    const TL_HEADER_W = 58;  // Coluna fixa à esquerda com nomes das linhas ("Tempo", "Oito", "Áudio", "Marcas")
+
+    function getVisibleTimeWindow() {
+      const total = Math.max(1, project.duration);
+      const visDur = total / Math.max(1, tlZoom);
+      const maxStart = Math.max(0, total - visDur);
+      const startT = tlScrollRatio * maxStart;
+      return { startT, endT: startT + visDur, visDur, maxStart };
+    }
+
+    function updateTimelineZoom(val) {
+      tlZoom = Math.max(1, Math.min(8, Number(val) || 1));
+      const inp = document.getElementById('tlZoomRange');
+      if (inp) inp.value = tlZoom;
+      // Centraliza na agulha atual ao dar zoom
+      const total = Math.max(1, project.duration);
+      const visDur = total / tlZoom;
+      const maxStart = Math.max(0.001, total - visDur);
+      tlScrollRatio = Math.max(0, Math.min(1, (currentTime - visDur * 0.5) / maxStart));
+      const sc = document.getElementById('tlScrollRange');
+      if (sc) sc.value = tlScrollRatio * 100;
+    }
+
+    function updateTimelineScroll(val) {
+      tlScrollRatio = Math.max(0, Math.min(1, (Number(val) || 0) / 100));
+    }
 
     function timeToX(t, w) {
-      const padL = 16, padR = 16;
-      return padL + (t / Math.max(1, project.duration)) * (w - padL - padR);
+      const padL = TL_HEADER_W + 8, padR = 14;
+      const { startT, visDur } = getVisibleTimeWindow();
+      return padL + ((t - startT) / Math.max(0.001, visDur)) * (w - padL - padR);
     }
+
     function xToTime(x, w) {
-      const padL = 16, padR = 16;
+      const padL = TL_HEADER_W + 8, padR = 14;
+      const { startT, visDur } = getVisibleTimeWindow();
       const ratio = (x - padL) / Math.max(1, w - padL - padR);
-      return Math.max(0, Math.min(project.duration, ratio * project.duration));
+      return Math.max(0, Math.min(project.duration, startT + ratio * visDur));
     }
+
+    tlCanvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      if (e.ctrlKey || Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        const factor = e.deltaY < 0 ? 0.25 : -0.25;
+        updateTimelineZoom(tlZoom + factor);
+      } else {
+        tlScrollRatio = Math.max(0, Math.min(1, tlScrollRatio + (e.deltaX / 500)));
+        const sc = document.getElementById('tlScrollRange');
+        if (sc) sc.value = tlScrollRatio * 100;
+      }
+    }, { passive: false });
 
     function drawTimeline() {
       const rect = tlCanvas.parentElement.getBoundingClientRect();
@@ -1857,53 +1972,97 @@
       const h = tlCanvas.height;
       tlCtx.clearRect(0, 0, w, h);
 
-      // 1. 8-Count ("Oitos") Ruler at Top
-      const beatSec = getBeatDuration();
-      const eightSec = beatSec * 8;
-      tlCtx.fillStyle = '#141126';
-      tlCtx.fillRect(0, 0, w, 32);
+      // Auto-scroll suave durante o Play se a agulha sair da janela visível
+      if (isPlaying && tlZoom > 1.01) {
+        const { startT, endT, visDur, maxStart } = getVisibleTimeWindow();
+        if (currentTime > endT - visDur * 0.1 || currentTime < startT) {
+          tlScrollRatio = Math.max(0, Math.min(1, (currentTime - visDur * 0.15) / Math.max(0.001, maxStart)));
+          const sc = document.getElementById('tlScrollRange');
+          if (sc) sc.value = tlScrollRatio * 100;
+        }
+      }
 
+      const { startT, endT, visDur } = getVisibleTimeWindow();
+      const beatSec = getBeatDuration();
+
+      // Fundo das faixas superiores (Régua de Tempo y=0..18 | Linha de Oito y=18..36)
+      tlCtx.fillStyle = 'rgba(15, 29, 35, 0.95)';
+      tlCtx.fillRect(0, 0, w, 36);
+      tlCtx.strokeStyle = 'rgba(248, 249, 250, 0.12)';
+      tlCtx.beginPath();
+      tlCtx.moveTo(0, 18);
+      tlCtx.lineTo(w, 18);
+      tlCtx.moveTo(0, 36);
+      tlCtx.lineTo(w, 36);
+      tlCtx.stroke();
+
+      // Clipping da área rolável da timeline (à direita da coluna fixa TL_HEADER_W)
+      tlCtx.save();
+      tlCtx.beginPath();
+      tlCtx.rect(TL_HEADER_W, 0, w - TL_HEADER_W, h);
+      tlCtx.clip();
+
+      // 1A. Régua de Tempo (Time Ruler: y = 0..18)
+      const timeStepSec = visDur <= 8 ? 0.5 : (visDur <= 18 ? 1 : (visDur <= 40 ? 2 : 5));
+      const firstTick = Math.floor(startT / timeStepSec) * timeStepSec;
+      tlCtx.fillStyle = '#b0c4c0';
+      tlCtx.font = '600 9px Inter, sans-serif';
+      for (let t = firstTick; t <= endT + 0.01; t += timeStepSec) {
+        if (t < 0) continue;
+        const x = timeToX(t, w);
+        tlCtx.strokeStyle = 'rgba(248, 249, 250, 0.22)';
+        tlCtx.lineWidth = 1;
+        tlCtx.beginPath();
+        tlCtx.moveTo(x, 0);
+        tlCtx.lineTo(x, 18);
+        tlCtx.stroke();
+        const label = timeStepSec < 1 ? `${t.toFixed(1)}s` : `${Math.round(t)}s`;
+        tlCtx.fillText(label, x + 3, 12);
+      }
+
+      // 1B. Linha "Oito" (y = 18..36): exibe APENAS o número do Oito (1, 2, 3...) sem repetir a palavra "Oito" nem o tempo
       let beatIdx = 0;
       for (let t = 0; t <= project.duration + 0.01; t += beatSec) {
-        const x = timeToX(t, w);
-        const isEightStart = (beatIdx % 8 === 0);
-        tlCtx.strokeStyle = isEightStart ? 'rgba(245, 158, 11, 0.65)' : 'rgba(255, 255, 255, 0.12)';
-        tlCtx.lineWidth = isEightStart ? 1.5 : 1;
-        tlCtx.beginPath();
-        tlCtx.moveTo(x, isEightStart ? 0 : 18);
-        tlCtx.lineTo(x, h);
-        tlCtx.stroke();
+        if (t >= startT - beatSec && t <= endT + beatSec) {
+          const x = timeToX(t, w);
+          const isEightStart = (beatIdx % 8 === 0);
+          tlCtx.strokeStyle = isEightStart ? 'rgba(233, 196, 106, 0.72)' : 'rgba(248, 249, 250, 0.11)';
+          tlCtx.lineWidth = isEightStart ? 1.6 : 1;
+          tlCtx.beginPath();
+          tlCtx.moveTo(x, 18);
+          tlCtx.lineTo(x, h);
+          tlCtx.stroke();
 
-        if (isEightStart) {
-          const eightNum = Math.floor(beatIdx / 8) + 1;
-          tlCtx.fillStyle = '#fbbf24';
-          tlCtx.font = '800 10px Inter, sans-serif';
-          tlCtx.fillText(`Oito ${eightNum} (${t.toFixed(1)}s)`, x + 4, 13);
-        } else if (w > 700) {
-          tlCtx.fillStyle = 'rgba(148, 163, 184, 0.5)';
-          tlCtx.font = '600 9px Inter, sans-serif';
-          tlCtx.fillText(`${(beatIdx % 8) + 1}`, x + 2, 27);
+          if (isEightStart) {
+            const eightNum = Math.floor(beatIdx / 8) + 1;
+            tlCtx.fillStyle = '#E9C46A';
+            tlCtx.font = '800 11px Epilogue, sans-serif';
+            tlCtx.fillText(`${eightNum}`, x + 5, 31);
+          } else if ((w - TL_HEADER_W) / (visDur / beatSec) > 18) {
+            tlCtx.fillStyle = 'rgba(176, 196, 192, 0.55)';
+            tlCtx.font = '600 8.5px Inter, sans-serif';
+            tlCtx.fillText(`·${(beatIdx % 8) + 1}`, x + 2, 31);
+          }
         }
         beatIdx++;
       }
 
-      // 2. Audio Waveform Track (middle band, shifted live by project.audioOffset)
+      // 2. Faixa de Forma de Onda do Áudio (Waveform: y = 38..78)
       const waveY = 58;
-      const waveH = 26;
+      const waveH = 20;
       if (waveformPeaks.length > 0) {
-        const padL = 16, padR = 16;
+        const padL = TL_HEADER_W + 8, padR = 14;
         const usableW = w - padL - padR;
-        const bins = 240;
+        const bins = 260;
         const offsetSec = Number(project.audioOffset || 0);
         const peaksPerSec = waveformPeaks.peaksPerSec || (waveformPeaks.length / Math.max(1, project.duration));
 
         for (let i = 0; i < bins; i++) {
-          const tTimeline = (i / bins) * project.duration;
+          const tTimeline = startT + (i / bins) * visDur;
           const tAudio = tTimeline + offsetSec;
           const px = padL + (i / bins) * usableW;
           if (tAudio < 0) {
-            // Count-in silence region (negative offset)
-            tlCtx.fillStyle = 'rgba(244, 63, 94, 0.14)';
+            tlCtx.fillStyle = 'rgba(231, 111, 81, 0.18)';
             tlCtx.fillRect(px, waveY - 2, Math.max(1.5, usableW / bins - 0.5), 4);
             continue;
           }
@@ -1911,22 +2070,15 @@
           if (peakIdx >= 0 && peakIdx < waveformPeaks.length) {
             const amp = waveformPeaks[peakIdx];
             const ph = Math.max(2, amp * waveH);
-            tlCtx.fillStyle = 'rgba(56, 189, 248, 0.34)';
+            tlCtx.fillStyle = 'rgba(42, 157, 143, 0.46)';
             tlCtx.fillRect(px, waveY - ph, Math.max(1.5, usableW / bins - 0.5), ph * 2);
           }
         }
-
-        // Visual badge showing current Audio Offset on waveform
-        if (Math.abs(offsetSec) > 0.005) {
-          tlCtx.fillStyle = '#38bdf8';
-          tlCtx.font = '700 9px Inter, sans-serif';
-          tlCtx.fillText(`🎵 Offset Áudio: ${offsetSec >= 0 ? '+' : ''}${offsetSec.toFixed(2)}s`, padL + 6, waveY - waveH + 9);
-        }
       }
 
-      // 3. Cues Track: Transition Bar (◆ Start Move -> ■ Arrive Pose) + Hold Bar
-      const trackY = 92;
-      const trackH = 44;
+      // 3. Faixa de Marcas / Cues (y = 84..124)
+      const trackY = 84;
+      const trackH = 40;
       project.cues.forEach((cue, idx) => {
         const xStart = timeToX(cue.startTime, w);
         const xArrive = timeToX(cue.arriveTime, w);
@@ -1934,82 +2086,102 @@
         const xHoldEnd = nextCue ? timeToX(nextCue.startTime, w) : timeToX(project.duration, w);
         const isSel = idx === activeCueIndex;
 
-        // Transition region (Start -> Arrive)
         if (xArrive > xStart + 2) {
           const tGrad = tlCtx.createLinearGradient(xStart, 0, xArrive, 0);
-          tGrad.addColorStop(0, 'rgba(245, 158, 11, 0.35)');
-          tGrad.addColorStop(1, 'rgba(244, 63, 94, 0.45)');
+          tGrad.addColorStop(0, 'rgba(233, 196, 106, 0.38)');
+          tGrad.addColorStop(1, 'rgba(231, 111, 81, 0.48)');
           tlCtx.fillStyle = tGrad;
           tlCtx.fillRect(xStart, trackY, xArrive - xStart, trackH);
-          tlCtx.strokeStyle = isSel ? '#fbbf24' : 'rgba(245, 158, 11, 0.65)';
+          tlCtx.strokeStyle = isSel ? '#E9C46A' : 'rgba(233, 196, 106, 0.7)';
           tlCtx.lineWidth = isSel ? 2 : 1;
           tlCtx.strokeRect(xStart, trackY, xArrive - xStart, trackH);
         }
 
-        // Hold region (Arrive -> Next Start)
         if (xHoldEnd > xArrive) {
-          tlCtx.fillStyle = isSel ? 'rgba(244, 63, 94, 0.26)' : 'rgba(56, 189, 248, 0.14)';
+          tlCtx.fillStyle = isSel ? 'rgba(231, 111, 81, 0.30)' : 'rgba(42, 157, 143, 0.20)';
           tlCtx.fillRect(xArrive, trackY, xHoldEnd - xArrive, trackH);
-          tlCtx.strokeStyle = isSel ? '#f43f5e' : 'rgba(56, 189, 248, 0.4)';
+          tlCtx.strokeStyle = isSel ? '#E76F51' : 'rgba(42, 157, 143, 0.5)';
           tlCtx.lineWidth = isSel ? 2 : 1;
           tlCtx.strokeRect(xArrive, trackY, xHoldEnd - xArrive, trackH);
         }
 
-        // Handle ◆ Start Move (Orange Diamond)
         if (idx > 0) {
-          tlCtx.fillStyle = '#fbbf24';
+          tlCtx.fillStyle = '#E9C46A';
           tlCtx.beginPath();
-          tlCtx.moveTo(xStart, trackY - 7);
-          tlCtx.lineTo(xStart + 7, trackY);
-          tlCtx.lineTo(xStart, trackY + 7);
-          tlCtx.lineTo(xStart - 7, trackY);
+          tlCtx.moveTo(xStart, trackY - 6);
+          tlCtx.lineTo(xStart + 6, trackY);
+          tlCtx.lineTo(xStart, trackY + 6);
+          tlCtx.lineTo(xStart - 6, trackY);
           tlCtx.closePath();
           tlCtx.fill();
         }
 
-        // Handle ■ Arrive / Formation Keyframe (Cyan Square)
-        tlCtx.fillStyle = '#38bdf8';
-        tlCtx.fillRect(xArrive - 6, trackY + trackH - 6, 12, 12);
+        tlCtx.fillStyle = '#2A9D8F';
+        tlCtx.fillRect(xArrive - 5, trackY + trackH - 5, 10, 10);
 
-        // Cue Title & Step inside bar
         tlCtx.save();
         tlCtx.beginPath();
         tlCtx.rect(xStart + 4, trackY, Math.max(0, xHoldEnd - xStart - 8), trackH);
         tlCtx.clip();
-        tlCtx.fillStyle = '#ffffff';
-        tlCtx.font = '800 11px Inter, sans-serif';
-        tlCtx.fillText(cue.name, xStart + 8, trackY + 17);
-        tlCtx.fillStyle = '#cbd5e1';
-        tlCtx.font = '600 10px Inter, sans-serif';
-        tlCtx.fillText(`👞 ${cue.step || ''}`, xStart + 8, trackY + 33);
+        tlCtx.fillStyle = '#F8F9FA';
+        tlCtx.font = '700 10.5px Epilogue, sans-serif';
+        tlCtx.fillText(cue.name, xStart + 8, trackY + 15);
+        tlCtx.fillStyle = '#e2ece9';
+        tlCtx.font = '500 9.5px Inter, sans-serif';
+        tlCtx.fillText(`👞 ${cue.step || ''}`, xStart + 8, trackY + 30);
         tlCtx.restore();
       });
 
-      // 4. Playhead Needle
+      // 4. Agulha (Playhead)
       const px = timeToX(currentTime, w);
-      tlCtx.strokeStyle = '#f43f5e';
+      tlCtx.strokeStyle = '#E76F51';
       tlCtx.lineWidth = 2.5;
       tlCtx.beginPath();
       tlCtx.moveTo(px, 0);
       tlCtx.lineTo(px, h);
       tlCtx.stroke();
 
-      tlCtx.fillStyle = '#f43f5e';
+      tlCtx.fillStyle = '#E76F51';
       tlCtx.beginPath();
-      tlCtx.moveTo(px - 7, 0);
-      tlCtx.lineTo(px + 7, 0);
-      tlCtx.lineTo(px, 11);
+      tlCtx.moveTo(px - 6, 0);
+      tlCtx.lineTo(px + 6, 0);
+      tlCtx.lineTo(px, 10);
       tlCtx.closePath();
       tlCtx.fill();
+      tlCtx.restore();
+
+      // 5. Coluna Fixa Esquerda (Nomes das Linhas: "Tempo", "Oito", "Áudio", "Marcas")
+      tlCtx.fillStyle = '#122229';
+      tlCtx.fillRect(0, 0, TL_HEADER_W, h);
+      tlCtx.strokeStyle = 'rgba(248, 249, 250, 0.18)';
+      tlCtx.beginPath();
+      tlCtx.moveTo(TL_HEADER_W, 0);
+      tlCtx.lineTo(TL_HEADER_W, h);
+      tlCtx.moveTo(0, 18);
+      tlCtx.lineTo(TL_HEADER_W, 18);
+      tlCtx.moveTo(0, 36);
+      tlCtx.lineTo(TL_HEADER_W, 36);
+      tlCtx.stroke();
+
+      tlCtx.font = '700 9.5px Epilogue, sans-serif';
+      tlCtx.fillStyle = '#b0c4c0';
+      tlCtx.fillText('Tempo', 7, 13);
+      tlCtx.fillStyle = '#E9C46A';
+      tlCtx.fillText('Oito', 7, 31);
+      tlCtx.fillStyle = '#2A9D8F';
+      tlCtx.fillText('Áudio', 7, 61);
+      tlCtx.fillStyle = '#F4A261';
+      tlCtx.fillText('Marcas', 7, 107);
     }
 
     tlCanvas.addEventListener('pointerdown', (e) => {
       const rect = tlCanvas.getBoundingClientRect();
       const mx = e.clientX - rect.left;
       const my = e.clientY - rect.top;
+      if (mx < TL_HEADER_W) return;
       const w = tlCanvas.width;
-      const trackY = 92;
-      const trackH = 44;
+      const trackY = 84;
+      const trackH = 40;
 
       // Check ◆ Start Move or ■ Arrive handles
       for (let i = 0; i < project.cues.length; i++) {
