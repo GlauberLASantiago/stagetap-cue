@@ -652,7 +652,8 @@
     </div>
 
     <div class="topbar-actions">
-      <button type="button" class="btn btn-amber" onclick="loadDemoChoreography()" title="Carregar coreografia exemplo completa">🎬 Demo Shim Sham</button>
+      <button type="button" class="btn" style="border-color:var(--accent-cyan);color:var(--accent-cyan);" onclick="openNewProjectModal()" title="Criar uma nova coreografia limpa do zero">✨ Novo</button>
+      <button type="button" class="btn btn-amber" onclick="loadDemoChoreography()" title="Carregar coreografia exemplo completa (40 Oitos / 18 Cues)">🎬 Demo Shim Sham</button>
       <button type="button" id="btnExportVideo" class="btn btn-primary" onclick="startVideoExport()" title="Gravar e exportar vídeo MP4/WebM com a visualização atual do palco em Tela Cheia e áudio sincronizado">🎥 Exportar Vídeo</button>
       <button type="button" class="btn" onclick="toggleShortcutsModal()" title="Ver todas as teclas de atalho (Tecla H ou ?)">⌨️ Atalhos</button>
       <button type="button" class="btn" onclick="exportProjectJson()">💾 Exportar</button>
@@ -1300,6 +1301,73 @@
       </div>
     </div>
   </footer>
+
+  <!-- MODAL DE NOVO PROJETO -->
+  <div id="newProjectModalBackdrop" class="shortcuts-modal-backdrop" onclick="if(event.target===this) toggleNewProjectModal(false)">
+    <div class="shortcuts-modal" style="max-width:480px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;">
+        <div>
+          <h3 style="font-size:1.02rem;color:var(--accent-amber);">✨ Novo Projeto de Coreografia</h3>
+          <p style="font-size:0.74rem;color:var(--text-muted);">Inicie um palco limpo com apenas a formação inicial (Cue 1) para criar sua coreografia do zero.</p>
+        </div>
+        <button type="button" class="btn" onclick="toggleNewProjectModal(false)">✕</button>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div>
+          <label class="field-label"><span>Título da Coreografia</span></label>
+          <input type="text" id="newProjTitleInput" class="input-text" value="Nova Coreografia de Sapateado" />
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div>
+            <label class="field-label"><span>Nº de Dançarinos</span></label>
+            <input type="number" id="newProjCastInput" class="input-num" min="1" max="12" step="1" value="6" />
+          </div>
+          <div>
+            <label class="field-label"><span>Formação Inicial (Cue 1)</span></label>
+            <select id="newProjFormationSelect" class="input-num">
+              <option value="line" selected>Linha Frontal</option>
+              <option value="wings">Nas Coxias (Wings)</option>
+              <option value="stagger">2 Filas (Xadrez)</option>
+              <option value="wedge">Cunha (V)</option>
+              <option value="circle">Meia-Lua / Roda</option>
+              <option value="diagonal">Diagonal</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+          <div>
+            <label class="field-label"><span>BPM Inicial</span></label>
+            <input type="number" id="newProjBpmInput" class="input-num" min="40" max="240" step="0.5" value="115" />
+          </div>
+          <div>
+            <label class="field-label"><span>Duração (s)</span></label>
+            <input type="number" id="newProjDurInput" class="input-num" min="8" max="600" step="1" value="60" />
+          </div>
+          <div>
+            <label class="field-label"><span>Offset Áudio (s)</span></label>
+            <input type="number" id="newProjOffsetInput" class="input-num" step="0.001" value="0.000" />
+          </div>
+        </div>
+
+        <div>
+          <label class="field-label"><span>Trilha de Áudio / Música</span></label>
+          <select id="newProjAudioModeSelect" class="input-num">
+            <option value="keep" selected>Manter o áudio atual carregado</option>
+            <option value="upload">📂 Escolher um arquivo MP3 ou Vídeo do computador agora...</option>
+            <option value="silent">🔇 Sem música (usar apenas o Metrônomo)</option>
+          </select>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px;">
+          <button type="button" class="btn" onclick="toggleNewProjectModal(false)">Cancelar</button>
+          <button type="button" class="btn btn-primary" onclick="createNewProjectFromModal()">✨ Criar Projeto Limpo</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- MODAL DE TECLAS DE ATALHO -->
   <div id="shortcutsModalBackdrop" class="shortcuts-modal-backdrop" onclick="if(event.target===this) toggleShortcutsModal(false)">
@@ -5649,6 +5717,119 @@
       el.classList.toggle('open', next);
     }
 
+    function toggleNewProjectModal(forceState) {
+      const el = document.getElementById('newProjectModalBackdrop');
+      if (!el) return;
+      const next = typeof forceState === 'boolean' ? forceState : !el.classList.contains('open');
+      el.classList.toggle('open', next);
+    }
+
+    function openNewProjectModal() {
+      const castInp = document.getElementById('newProjCastInput');
+      const bpmInp = document.getElementById('newProjBpmInput');
+      const durInp = document.getElementById('newProjDurInput');
+      const offInp = document.getElementById('newProjOffsetInput');
+      if (castInp) castInp.value = project.dancers.length || 6;
+      if (bpmInp) bpmInp.value = Math.round((project.bpm || 115) * 10) / 10;
+      if (durInp) durInp.value = Math.round(project.duration || 60);
+      if (offInp) offInp.value = Number(project.audioOffset || 0).toFixed(3);
+      toggleNewProjectModal(true);
+    }
+
+    function createNewProjectFromModal() {
+      if (isPlaying) togglePlay();
+      setEditing3DDancer(null);
+
+      const title = (document.getElementById('newProjTitleInput').value || 'Nova Coreografia').trim();
+      const nDancers = Math.max(1, Math.min(12, Math.round(Number(document.getElementById('newProjCastInput').value) || 6)));
+      const formation = document.getElementById('newProjFormationSelect').value || 'line';
+      const bpm = Math.max(40, Math.min(240, Number(document.getElementById('newProjBpmInput').value) || 115));
+      const duration = Math.max(8, Math.min(600, Number(document.getElementById('newProjDurInput').value) || 60));
+      const audioOffset = Math.round((Number(document.getElementById('newProjOffsetInput').value) || 0) * 1000) / 1000;
+      const audioMode = document.getElementById('newProjAudioModeSelect').value || 'keep';
+
+      const defaultNames = ['Ana', 'Bia', 'Caio', 'Dani', 'Edu', 'Fê', 'Gui', 'Helena', 'Igor', 'Júlia', 'Kauê', 'Lara'];
+      const dancers = [];
+      for (let i = 0; i < nDancers; i++) {
+        const code = String.fromCharCode(65 + i);
+        dancers.push({
+          id: 'd' + (i + 1),
+          code,
+          name: `${code} - ${defaultNames[i] || ('Tap ' + (i + 1))}`,
+          color: DANCER_COLORS[i % DANCER_COLORS.length]
+        });
+      }
+
+      const cue1 = {
+        id: 'cue_1',
+        name: 'Cue 1 — Posição Inicial',
+        step: 'Preparação / Início',
+        startTime: 0,
+        arriveTime: 0,
+        positions: {}
+      };
+      dancers.forEach((d) => {
+        cue1.positions[d.id] = { x: 0, z: 0.15, angle: 0, ctrlX: 0, ctrlZ: 0, offsetBeats: 0, step: '' };
+      });
+
+      project = {
+        title,
+        bpm,
+        audioOffset,
+        duration,
+        stageWidthM: project.stageWidthM || 10,
+        stageDepthM: project.stageDepthM || 7,
+        floorMarking: project.floorMarking || 'quadrantes',
+        audienceSide: project.audienceSide || 'bottom',
+        avatarStyle: project.avatarStyle || 'realistic',
+        tempoMap: [
+          { id: 'tm_1', bar: 1, bpm, num: 4, den: 4 }
+        ],
+        dancers,
+        cues: [cue1]
+      };
+
+      activeCueIndex = 0;
+      liveCueCursorIdx = 1;
+      liveEightCursor = 1;
+      selectedDancerId = dancers[0].id;
+      povDancerId = dancers[0].id;
+      currentTime = 0;
+
+      applyQuickFormation(formation);
+
+      document.getElementById('bpmInput').value = bpm;
+      document.getElementById('durationInput').value = duration;
+      const offEl = document.getElementById('audioOffsetInput');
+      if (offEl) offEl.value = audioOffset.toFixed(3);
+
+      if (audioMode === 'silent') {
+        if (audioElement) {
+          audioElement.pause();
+          audioElement = null;
+        }
+        audioBuffer = null;
+        waveformPeaks = [];
+        document.getElementById('audioFileName').textContent = '🔇 Sem Áudio (Metrônomo)';
+        document.getElementById('btnDefaultMusic').classList.remove('btn-amber');
+        if (!metronomeEnabled) toggleMetronome();
+      } else if (audioMode === 'upload') {
+        setTimeout(() => {
+          const fileInp = document.getElementById('audioFileInput');
+          if (fileInp) fileInp.click();
+        }, 120);
+      } else {
+        syncAudioElementToTimeline();
+      }
+
+      if (scene3d) {
+        rebuild3DDancers();
+        updateAndRender3D();
+      }
+      toggleNewProjectModal(false);
+      syncAllUI();
+    }
+
     function cyclePlaybackSpeed() {
       const speeds = [1.0, 0.75, 0.5];
       const curIdx = speeds.indexOf(playbackSpeed);
@@ -5764,6 +5945,7 @@
 
       if (e.code === 'Escape') {
         toggleShortcutsModal(false);
+        toggleNewProjectModal(false);
         setEditing3DDancer(null);
         return;
       }
