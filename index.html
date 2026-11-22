@@ -1,0 +1,2331 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>StageTap Cue — Marcação de Palco e Coreografia de Sapateado 2D & 3D</title>
+  <meta name="description" content="Estúdio interativo de marcação de palco (stage blocking) e formações para sapateado em 2D e 3D com timeline híbrida, contagem em Oitos, metrônomo e áudio." />
+  <meta name="theme-color" content="#f43f5e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+
+  <!-- Open Graph / WhatsApp Preview -->
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="pt_BR" />
+  <meta property="og:site_name" content="StageTap Cue" />
+  <meta property="og:title" content="StageTap Cue — Marcação de Palco e Coreografia de Sapateado 2D & 3D" />
+  <meta property="og:description" content="Estúdio de marcação de palco (stage blocking) e formações para sapateado em 2D e 3D com timeline híbrida, contagem em Oitos, metrônomo e áudio." />
+  <meta property="og:url" content="https://stagetap-cue.web.app/" />
+  <meta property="og:image" content="https://stagetap-cue.web.app/icons/og-cover.jpg" />
+  <meta property="og:image:secure_url" content="https://stagetap-cue.web.app/icons/og-cover.jpg" />
+  <meta property="og:image:type" content="image/jpeg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="StageTap Cue — Marcação de Palco e Coreografia de Sapateado 2D & 3D" />
+  <meta name="twitter:description" content="Estúdio de marcação de palco (stage blocking) e formações para sapateado em 2D e 3D com timeline híbrida, contagem em Oitos, metrônomo e áudio." />
+  <meta name="twitter:image" content="https://stagetap-cue.web.app/icons/og-cover.jpg" />
+
+  <!-- Three.js + OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <style>
+    :root {
+      --bg-app: #0b0914;
+      --bg-panel: #131022;
+      --bg-card: #1b1730;
+      --bg-input: #0e0b1a;
+      --border: rgba(255, 255, 255, 0.11);
+      --border-strong: rgba(244, 63, 94, 0.45);
+      --text-main: #f8fafc;
+      --text-sub: #cbd5e1;
+      --text-muted: #94a3b8;
+      --accent: #f43f5e;
+      --accent-hover: #fb7185;
+      --accent-amber: #f59e0b;
+      --accent-cyan: #38bdf8;
+      --accent-emerald: #10b981;
+      --accent-violet: #a855f7;
+    }
+
+    html.light {
+      --bg-app: #f1f5f9;
+      --bg-panel: #ffffff;
+      --bg-card: #f8fafc;
+      --bg-input: #ffffff;
+      --border: rgba(15, 23, 42, 0.12);
+      --border-strong: rgba(244, 63, 94, 0.5);
+      --text-main: #0f172a;
+      --text-sub: #334155;
+      --text-muted: #64748b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg-app);
+      color: var(--text-main);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* TOPBAR */
+    .topbar {
+      height: 54px;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-logo {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, #f43f5e, #f59e0b);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      color: #fff;
+      font-size: 0.95rem;
+      box-shadow: 0 4px 12px rgba(244, 63, 94, 0.35);
+    }
+    .brand-title {
+      font-weight: 800;
+      font-size: 1.05rem;
+      letter-spacing: -0.02em;
+    }
+    .brand-title span { color: var(--accent); }
+    .brand-sub {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      display: block;
+    }
+
+    .view-switcher {
+      display: flex;
+      background: var(--bg-input);
+      padding: 3px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      gap: 4px;
+    }
+    .view-btn {
+      padding: 6px 13px;
+      border-radius: 7px;
+      border: none;
+      background: transparent;
+      color: var(--text-sub);
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .view-btn.active {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(244, 63, 94, 0.35);
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn {
+      padding: 6px 11px;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-main);
+      font-size: 0.76rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s;
+    }
+    .btn:hover { border-color: var(--accent); }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-amber {
+      background: rgba(245, 158, 11, 0.16);
+      color: #fbbf24;
+      border-color: rgba(245, 158, 11, 0.4);
+    }
+
+    /* MAIN WORKSPACE */
+    .workspace {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 290px 1fr 320px;
+      min-height: 0;
+    }
+
+    .panel {
+      background: var(--bg-panel);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: 12px;
+      gap: 12px;
+    }
+    .panel-right {
+      border-right: none;
+      border-left: 1px solid var(--border);
+    }
+
+    .section-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .section-title {
+      font-size: 0.74rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .dancer-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      max-height: 195px;
+      overflow-y: auto;
+    }
+    .dancer-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 7px;
+      border-radius: 7px;
+      background: var(--bg-input);
+      border: 1px solid transparent;
+      cursor: pointer;
+    }
+    .dancer-row.selected {
+      border-color: var(--accent);
+      background: rgba(244, 63, 94, 0.12);
+    }
+    .dancer-badge {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.75rem;
+      color: #000;
+      flex-shrink: 0;
+    }
+    .dancer-name-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      font-size: 0.78rem;
+      font-weight: 600;
+      outline: none;
+      min-width: 0;
+    }
+    .dancer-color-input {
+      width: 20px;
+      height: 20px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .chip-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .chip {
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg-input);
+      color: var(--text-sub);
+      font-size: 0.71rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .chip:hover, .chip.active {
+      border-color: var(--accent);
+      color: var(--text-main);
+      background: rgba(244, 63, 94, 0.15);
+    }
+
+    .field-label {
+      font-size: 0.72rem;
+      color: var(--text-sub);
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+    }
+    .input-text, .input-num {
+      width: 100%;
+      padding: 6px 8px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg-input);
+      color: var(--text-main);
+      font-size: 0.78rem;
+    }
+
+    /* STAGE VIEWPORT */
+    .stage-area {
+      position: relative;
+      background: radial-gradient(circle at center, #17132b 0%, #090710 100%);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .stage-hud-top {
+      position: absolute;
+      top: 10px;
+      left: 12px;
+      right: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      pointer-events: none;
+      z-index: 10;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .hud-card {
+      pointer-events: auto;
+      background: rgba(15, 12, 28, 0.86);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      border-radius: 10px;
+      padding: 6px 11px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #f8fafc;
+    }
+    .eight-leds {
+      display: flex;
+      gap: 4px;
+    }
+    .beat-led {
+      width: 20px;
+      height: 20px;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: #94a3b8;
+    }
+    .beat-led.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: #fff;
+      transform: scale(1.08);
+    }
+    .beat-led.active-one {
+      background: var(--accent-amber);
+      color: #000;
+      border-color: #fff;
+      transform: scale(1.12);
+    }
+
+    .stage-hud-bottom {
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      pointer-events: none;
+    }
+    .step-banner {
+      background: rgba(15, 12, 28, 0.92);
+      border: 1px solid var(--border-strong);
+      padding: 7px 16px;
+      border-radius: 999px;
+      font-size: 0.86rem;
+      font-weight: 800;
+      color: #fff;
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.55);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .cam-bar {
+      pointer-events: auto;
+      display: none;
+      background: rgba(15, 12, 28, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 4px;
+      border-radius: 10px;
+      gap: 4px;
+    }
+    .cam-bar.visible { display: flex; }
+
+    #canvas2d, #container3d {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    #container3d { display: none; }
+
+    /* TIMELINE FOOTER */
+    .timeline-dock {
+      height: 215px;
+      background: var(--bg-panel);
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    .transport-bar {
+      height: 44px;
+      padding: 0 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .transport-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .time-readout {
+      font-family: monospace;
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: var(--accent-cyan);
+      background: var(--bg-input);
+      padding: 4px 9px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .timeline-canvas-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: #0d0a18;
+    }
+    #timelineCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: pointer;
+    }
+
+    .cue-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      max-height: 210px;
+      overflow-y: auto;
+    }
+    .cue-item {
+      padding: 7px 9px;
+      border-radius: 8px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .cue-item.active {
+      border-color: var(--accent);
+      background: rgba(244, 63, 94, 0.14);
+    }
+    .cue-item-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+    .cue-item-sub {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    @media (max-width: 1100px) {
+      .workspace {
+        grid-template-columns: 240px 1fr 260px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-logo">ST</div>
+      <div>
+        <div class="brand-title">StageTap <span>Cue</span></div>
+        <span class="brand-sub">Stage Blocking &amp; Tap Dance Formations • 2D / 3D</span>
+      </div>
+    </div>
+
+    <div class="view-switcher">
+      <button type="button" id="btnView2D" class="view-btn active" onclick="setViewMode('2d')">🗺️ Mapa 2D (Ortogonal)</button>
+      <button type="button" id="btnView3D" class="view-btn" onclick="setViewMode('3d')">🎥 Palco 3D (Câmeras Móveis)</button>
+    </div>
+
+    <div class="topbar-actions">
+      <button type="button" class="btn btn-amber" onclick="loadDemoChoreography()" title="Carregar coreografia exemplo completa">🎬 Demo Shim Sham</button>
+      <button type="button" class="btn" onclick="exportProjectJson()">💾 Exportar</button>
+      <button type="button" class="btn" onclick="document.getElementById('importJsonInput').click()">📂 Importar</button>
+      <input type="file" id="importJsonInput" accept=".json" hidden onchange="importProjectJson(event)" />
+      <button type="button" class="btn" onclick="toggleTheme()" title="Alternar tema Escuro/Claro">🌓</button>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <div class="workspace">
+    <!-- LEFT PANEL: CAST & DANCER ORIENTATION -->
+    <aside class="panel">
+      <!-- Cast Manager -->
+      <div class="section-box">
+        <div class="section-title">
+          <span>👯 Elenco (<span id="dancerCountLabel">6</span>)</span>
+          <button type="button" class="btn btn-primary" style="padding:3px 8px;font-size:0.7rem;" onclick="addDancer()">+ Dançarino</button>
+        </div>
+        <div class="chip-grid">
+          <button type="button" class="chip" onclick="setCastSize(2)">Duo (2)</button>
+          <button type="button" class="chip" onclick="setCastSize(4)">Quarteto (4)</button>
+          <button type="button" class="chip" onclick="setCastSize(6)">Sexteto (6)</button>
+          <button type="button" class="chip" onclick="setCastSize(8)">Octeto (8)</button>
+        </div>
+        <div id="dancerList" class="dancer-list"></div>
+      </div>
+
+      <!-- Quick Formations -->
+      <div class="section-box">
+        <div class="section-title"><span>📐 Formações Rápidas (No Cue Atual)</span></div>
+        <div class="chip-grid">
+          <button type="button" class="chip" onclick="applyQuickFormation('line')">Linha Frontal</button>
+          <button type="button" class="chip" onclick="applyQuickFormation('stagger')">2 Filas (Xadrez)</button>
+          <button type="button" class="chip" onclick="applyQuickFormation('wedge')">Cunha (V)</button>
+          <button type="button" class="chip" onclick="applyQuickFormation('diagonal')">Diagonal</button>
+          <button type="button" class="chip" onclick="applyQuickFormation('circle')">Meia-Lua / Roda</button>
+          <button type="button" class="chip" onclick="applyQuickFormation('wings')">Nas Coxias (Wings)</button>
+        </div>
+      </div>
+
+      <!-- Selected Dancer Inspector (Front/Back & Hybrid Offset) -->
+      <div class="section-box" id="dancerInspectorBox">
+        <div class="section-title">
+          <span>🧭 Dançarino: <strong id="inspDancerName" style="color:var(--accent-amber);">A</strong></span>
+          <button type="button" class="btn" style="padding:2px 6px;font-size:0.68rem;" onclick="resetSelectedDancerCurve()" title="Endireitar trajetória curva">↺ Reta</button>
+        </div>
+
+        <label class="field-label">
+          <span>Frente / Direção do Olhar</span>
+          <span id="inspAngleVal">0° (Plateia)</span>
+        </label>
+        <input type="range" id="inspAngleRange" min="-180" max="180" step="15" value="0" oninput="updateSelectedDancerAngle(this.value)" />
+
+        <div class="chip-grid">
+          <button type="button" class="chip" onclick="updateSelectedDancerAngle(0)">↓ Plateia (0°)</button>
+          <button type="button" class="chip" onclick="updateSelectedDancerAngle(180)">↑ Costas (180°)</button>
+          <button type="button" class="chip" onclick="updateSelectedDancerAngle(-90)">← Esq (-90°)</button>
+          <button type="button" class="chip" onclick="updateSelectedDancerAngle(90)">→ Dir (+90°)</button>
+          <button type="button" class="chip" onclick="updateSelectedDancerAngle(-45)">↙ Diag.Esq</button>
+          <button type="button" class="chip" onclick="updateSelectedDancerAngle(45)">↘ Diag.Dir</button>
+        </div>
+
+        <label class="field-label" style="margin-top:4px;">
+          <span>⏱️ Offset Individual / Cânone (Tempos)</span>
+          <span id="inspOffsetVal">+0t</span>
+        </label>
+        <div class="chip-grid">
+          <button type="button" class="chip" onclick="setDancerOffsetBeats(0)">0t (Junto)</button>
+          <button type="button" class="chip" onclick="setDancerOffsetBeats(1)">+1t</button>
+          <button type="button" class="chip" onclick="setDancerOffsetBeats(2)">+2t</button>
+          <button type="button" class="chip" onclick="setDancerOffsetBeats(4)">+4t</button>
+          <button type="button" class="chip" onclick="setDancerOffsetBeats(1, true)">Escalonar Todos (Cânone)</button>
+        </div>
+
+        <label class="field-label" style="margin-top:4px;"><span>👞 Passo Individual (Opcional)</span></label>
+        <input type="text" id="inspCustomStep" class="input-text" placeholder="Ex: Solo Pullback / Wings..." oninput="updateSelectedDancerStep(this.value)" />
+      </div>
+    </aside>
+
+    <!-- CENTER STAGE VIEWPORT (2D & 3D) -->
+    <main class="stage-area">
+      <!-- Top HUD: 8-Count LEDs + Transition Status -->
+      <div class="stage-hud-top">
+        <div class="hud-card">
+          <div>
+            <div style="font-size:0.66rem;color:#94a3b8;font-weight:700;text-transform:uppercase;">Contagem de Sapateado (Oitos)</div>
+            <div id="hudEightText" style="font-size:0.86rem;font-weight:800;color:#fbbf24;">Oito 1 • Tempo 1</div>
+          </div>
+          <div class="eight-leds" id="eightLeds">
+            <div class="beat-led active-one">1</div>
+            <div class="beat-led">2</div>
+            <div class="beat-led">3</div>
+            <div class="beat-led">4</div>
+            <div class="beat-led">5</div>
+            <div class="beat-led">6</div>
+            <div class="beat-led">7</div>
+            <div class="beat-led">8</div>
+          </div>
+        </div>
+
+        <div class="hud-card">
+          <span id="hudStateBadge" style="font-size:0.76rem;font-weight:800;color:#10b981;">● EM FORMAÇÃO (HOLD)</span>
+          <span style="font-size:0.72rem;color:#94a3b8;">| Dica: arraste o dançarino, o anel de direção ou a bolinha ◆ da curva</span>
+        </div>
+      </div>
+
+      <!-- 2D Canvas -->
+      <canvas id="canvas2d"></canvas>
+
+      <!-- 3D Three.js Container -->
+      <div id="container3d"></div>
+
+      <!-- Bottom HUD: Step Banner & 3D Camera Presets -->
+      <div class="stage-hud-bottom">
+        <div id="camBar" class="cam-bar">
+          <button type="button" class="chip active" onclick="set3DCamera('audience')">🎭 Plateia (Frontal)</button>
+          <button type="button" class="chip" onclick="set3DCamera('choreo')">🎬 Coreógrafo (Diagonal)</button>
+          <button type="button" class="chip" onclick="set3DCamera('dancer')">🪞 Visão do Bailarino (De Costas)</button>
+          <button type="button" class="chip" onclick="set3DCamera('side')">📐 Lateral (Coxia)</button>
+          <button type="button" class="chip" onclick="set3DCamera('top')">⬆️ Topo 3D</button>
+        </div>
+        <div class="step-banner">
+          <span style="color:var(--accent-amber);" id="bannerCueName">Cue 1 — Abertura</span>
+          <span>•</span>
+          <span id="bannerStepText">👞 Shim Sham (Time Step)</span>
+        </div>
+      </div>
+    </main>
+
+    <!-- RIGHT PANEL: CUES (FORMATIONS) & STEP EDITOR -->
+    <aside class="panel panel-right">
+      <div class="section-box">
+        <div class="section-title">
+          <span>🎬 Marcas / Formações (Cues)</span>
+          <button type="button" class="btn btn-primary" style="padding:3px 8px;font-size:0.7rem;" onclick="addCueAtCurrentTime()">+ Nova Marca</button>
+        </div>
+        <div id="cueList" class="cue-list"></div>
+      </div>
+
+      <!-- Active Cue Editor -->
+      <div class="section-box">
+        <div class="section-title">
+          <span>✏️ Editar Marca Selecionada</span>
+          <button type="button" class="btn" style="padding:2px 6px;font-size:0.68rem;color:#f87171;" onclick="deleteActiveCue()">🗑 Excluir</button>
+        </div>
+
+        <label class="field-label"><span>Nome da Formação / Trecho</span></label>
+        <input type="text" id="cueNameInput" class="input-text" oninput="updateActiveCueMeta()" />
+
+        <label class="field-label"><span>👞 Passo de Sapateado (Legenda no Palco)</span></label>
+        <input type="text" id="cueStepInput" class="input-text" placeholder="Ex: Shim Sham, Time Step, Buffalo..." oninput="updateActiveCueMeta()" />
+
+        <div class="chip-grid">
+          <button type="button" class="chip" onclick="setCueStepQuick('Time Step')">Time Step</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Shim Sham')">Shim Sham</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Buffalo')">Buffalo</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Maxie Ford')">Maxie Ford</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Cramp Roll')">Cramp Roll</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Pullback')">Pullback</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Wings')">Wings</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Paddle & Roll')">Paddle &amp; Roll</button>
+          <button type="button" class="chip" onclick="setCueStepQuick('Over the Top')">Over the Top</button>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px;">
+          <div>
+            <label class="field-label"><span style="color:#fbbf24;">◆ Início Transição (s)</span></label>
+            <input type="number" id="cueStartInput" class="input-num" step="0.25" min="0" onchange="updateActiveCueTiming()" />
+            <button type="button" class="chip" style="width:100%;margin-top:4px;" onclick="markCueStartNow()">📍 Marcar no Tempo Atual</button>
+          </div>
+          <div>
+            <label class="field-label"><span style="color:#38bdf8;">■ Chegada / Pose (s)</span></label>
+            <input type="number" id="cueArriveInput" class="input-num" step="0.25" min="0" onchange="updateActiveCueTiming()" />
+            <button type="button" class="chip" style="width:100%;margin-top:4px;" onclick="markCueArriveNow()">🏁 Marcar no Tempo Atual</button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- TIMELINE DOCK -->
+  <footer class="timeline-dock">
+    <div class="transport-bar">
+      <div class="transport-group">
+        <button type="button" class="btn" onclick="seekTo(0)" title="Voltar ao início">⏮</button>
+        <button type="button" id="btnPlayPause" class="btn btn-primary" onclick="togglePlay()" style="min-width:92px;justify-content:center;">▶ Play</button>
+        <button type="button" class="btn" onclick="addCueAtCurrentTime()" title="Criar nova marca de posição no tempo atual">+ Marca Aqui</button>
+        <span class="time-readout" id="timeReadout">00:00.0 / 00:32.0</span>
+      </div>
+
+      <div class="transport-group">
+        <button type="button" id="btnMetronome" class="btn btn-amber" onclick="toggleMetronome()">🔔 Metrônomo: ON</button>
+        <label style="font-size:0.74rem;font-weight:700;color:var(--text-sub);display:flex;align-items:center;gap:4px;">
+          BPM:
+          <input type="number" id="bpmInput" class="input-num" value="120" min="50" max="220" style="width:58px;padding:3px 6px;" onchange="updateBpm(this.value)" />
+        </label>
+        <label style="font-size:0.74rem;font-weight:700;color:var(--text-sub);display:flex;align-items:center;gap:4px;">
+          Duração (s):
+          <input type="number" id="durationInput" class="input-num" value="32" min="8" max="300" style="width:58px;padding:3px 6px;" onchange="updateDuration(this.value)" />
+        </label>
+      </div>
+
+      <div class="transport-group">
+        <button type="button" class="btn" onclick="document.getElementById('audioFileInput').click()">🎵 Carregar Áudio (MP3/WAV)</button>
+        <input type="file" id="audioFileInput" accept="audio/*" hidden onchange="handleAudioUpload(event)" />
+        <span id="audioFileName" style="font-size:0.72rem;color:var(--text-muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Sem áudio externo</span>
+        <select id="speedSelect" class="input-num" style="width:68px;padding:3px 5px;" onchange="updatePlaybackSpeed(this.value)" title="Velocidade de ensaio">
+          <option value="0.5">0.5x</option>
+          <option value="0.75">0.75x</option>
+          <option value="1" selected>1.0x</option>
+          <option value="1.25">1.25x</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="timeline-canvas-wrap">
+      <canvas id="timelineCanvas"></canvas>
+    </div>
+  </footer>
+
+  <script>
+    // =========================================================================
+    // 1. ESTADO GLOBAL DO PROJETO (STAGETAP CUE)
+    // =========================================================================
+    const DANCER_COLORS = [
+      '#f43f5e', '#f59e0b', '#10b981', '#38bdf8',
+      '#a855f7', '#eab308', '#ec4899', '#14b8a6',
+      '#fb923c', '#6366f1', '#84cc16', '#06b6d4'
+    ];
+
+    let project = {
+      title: 'Shim Sham Classic & Canon',
+      bpm: 120,
+      duration: 32,
+      dancers: [],
+      cues: []
+    };
+
+    let viewMode = '2d'; // '2d' | '3d'
+    let activeCueIndex = 0;
+    let selectedDancerId = 'd1';
+    let currentTime = 0;
+    let isPlaying = false;
+    let metronomeEnabled = true;
+    let playbackSpeed = 1.0;
+    let lastFrameTs = 0;
+    let lastBeatPlayed = -1;
+
+    // Web Audio API (Metronome & Uploaded Audio)
+    let audioCtx = null;
+    let audioBuffer = null;
+    let audioElement = null;
+    let audioObjectUrl = null;
+    let waveformPeaks = [];
+
+    function ensureAudioCtx() {
+      if (!audioCtx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) audioCtx = new AC();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playTapClick(beatInEight) {
+      if (!metronomeEnabled) return;
+      ensureAudioCtx();
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      // Beat 1 of the 8-count has higher woodblock pitch; beat 5 medium; others crisp tap
+      osc.type = beatInEight === 1 ? 'triangle' : 'sine';
+      osc.frequency.setValueAtTime(beatInEight === 1 ? 1040 : (beatInEight === 5 ? 780 : 620), now);
+      gain.gain.setValueAtTime(beatInEight === 1 ? 0.25 : 0.14, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.065);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.07);
+    }
+
+    // =========================================================================
+    // 2. COREOGRAFIA DEMO INICIAL (6 SAPATEADORES, 5 CUES COM COXIAS, CURVAS E CÂNONE)
+    // =========================================================================
+    function loadDemoChoreography() {
+      isPlaying = false;
+      currentTime = 0;
+      const dancers = [
+        { id: 'd1', code: 'A', name: 'A - Ana', color: DANCER_COLORS[0] },
+        { id: 'd2', code: 'B', name: 'B - Bia', color: DANCER_COLORS[1] },
+        { id: 'd3', code: 'C', name: 'C - Caio', color: DANCER_COLORS[2] },
+        { id: 'd4', code: 'D', name: 'D - Dani', color: DANCER_COLORS[3] },
+        { id: 'd5', code: 'E', name: 'E - Edu', color: DANCER_COLORS[4] },
+        { id: 'd6', code: 'F', name: 'F - Fê', color: DANCER_COLORS[5] }
+      ];
+
+      // Cues use stage coordinates: x in [-1.35..1.35] (|x|>1.0 = Wings/Coxias), z in [-0.85..0.85] (-z = Upstage/Fundo, +z = Downstage/Plateia)
+      const cues = [
+        {
+          id: 'cue_1',
+          name: 'Cue 1 — Entrada das Coxias',
+          step: 'Preparação nas Coxias (Wings) + Shim Sham Entrada',
+          startTime: 0,
+          arriveTime: 0,
+          positions: {
+            d1: { x: -1.18, z: -0.25, angle: 90, ctrlX: 0, ctrlZ: 0, offsetBeats: 0, step: '' },
+            d2: { x: -1.18, z: 0.15, angle: 90, ctrlX: 0, ctrlZ: 0, offsetBeats: 0, step: '' },
+            d3: { x: -1.18, z: 0.50, angle: 90, ctrlX: 0, ctrlZ: 0, offsetBeats: 0, step: '' },
+            d4: { x: 1.18, z: -0.25, angle: -90, ctrlX: 0, ctrlZ: 0, offsetBeats: 0, step: '' },
+            d5: { x: 1.18, z: 0.15, angle: -90, ctrlX: 0, ctrlZ: 0, offsetBeats: 0, step: '' },
+            d6: { x: 1.18, z: 0.50, angle: -90, ctrlX: 0, ctrlZ: 0, offsetBeats: 0, step: '' }
+          }
+        },
+        {
+          id: 'cue_2',
+          name: 'Cue 2 — Linha do Shim Sham',
+          step: 'Shim Sham Chorus (8 Tempos • Frente para a Plateia)',
+          startTime: 1.0,
+          arriveTime: 4.0,
+          positions: {
+            d1: { x: -0.75, z: 0.10, angle: 0, ctrlX: -0.95, ctrlZ: -0.35, offsetBeats: 0, step: '' },
+            d2: { x: -0.45, z: 0.10, angle: 0, ctrlX: -0.80, ctrlZ: 0.10, offsetBeats: 0, step: '' },
+            d3: { x: -0.15, z: 0.10, angle: 0, ctrlX: -0.60, ctrlZ: 0.45, offsetBeats: 0, step: '' },
+            d4: { x: 0.15, z: 0.10, angle: 0, ctrlX: 0.60, ctrlZ: -0.35, offsetBeats: 0, step: '' },
+            d5: { x: 0.45, z: 0.10, angle: 0, ctrlX: 0.80, ctrlZ: 0.10, offsetBeats: 0, step: '' },
+            d6: { x: 0.75, z: 0.10, angle: 0, ctrlX: 0.95, ctrlZ: 0.45, offsetBeats: 0, step: '' }
+          }
+        },
+        {
+          id: 'cue_3',
+          name: 'Cue 3 — Cunha (V) & Cruzamento Curvo',
+          step: 'Time Step Duplo + Buffalo (Cruzamento em Curva)',
+          startTime: 8.0,
+          arriveTime: 12.0,
+          positions: {
+            d1: { x: -0.70, z: -0.35, angle: 15, ctrlX: -0.85, ctrlZ: -0.15, offsetBeats: 0, step: 'Buffalo Esq' },
+            d2: { x: 0.38, z: 0.05, angle: -15, ctrlX: -0.05, ctrlZ: -0.45, offsetBeats: 0, step: 'Cruzamento p/ Dir' },
+            d3: { x: -0.16, z: 0.45, angle: 0, ctrlX: -0.18, ctrlZ: 0.28, offsetBeats: 0, step: 'Time Step Centro' },
+            d4: { x: 0.16, z: 0.45, angle: 0, ctrlX: 0.18, ctrlZ: 0.28, offsetBeats: 0, step: 'Time Step Centro' },
+            d5: { x: -0.38, z: 0.05, angle: 15, ctrlX: 0.05, ctrlZ: 0.48, offsetBeats: 0, step: 'Cruzamento p/ Esq' },
+            d6: { x: 0.70, z: -0.35, angle: -15, ctrlX: 0.85, ctrlZ: -0.15, offsetBeats: 0, step: 'Buffalo Dir' }
+          }
+        },
+        {
+          id: 'cue_4',
+          name: 'Cue 4 — Roda de Desafios (Frente/Costas)',
+          step: 'Cânone em Roda: Cramp Roll + Giro de Costas / Frente',
+          startTime: 16.0,
+          arriveTime: 20.0,
+          positions: {
+            d1: { x: -0.55, z: -0.35, angle: 135, ctrlX: -0.65, ctrlZ: -0.35, offsetBeats: 0, step: 'Cânone 1' },
+            d2: { x: 0.0, z: -0.55, angle: 180, ctrlX: 0.25, ctrlZ: -0.40, offsetBeats: 1, step: 'Cânone 2 (Costas p/ Plateia)' },
+            d3: { x: 0.55, z: -0.35, angle: -135, ctrlX: 0.35, ctrlZ: 0.15, offsetBeats: 2, step: 'Cânone 3' },
+            d4: { x: 0.55, z: 0.35, angle: -45, ctrlX: 0.40, ctrlZ: 0.42, offsetBeats: 3, step: 'Cânone 4' },
+            d5: { x: 0.0, z: 0.55, angle: 0, ctrlX: -0.20, ctrlZ: 0.35, offsetBeats: 4, step: 'Cânone 5 (Frente Plateia)' },
+            d6: { x: -0.55, z: 0.35, angle: 45, ctrlX: 0.15, ctrlZ: 0.05, offsetBeats: 5, step: 'Cânone 6' }
+          }
+        },
+        {
+          id: 'cue_5',
+          name: 'Cue 5 — Finale na Ribalta (2 Filas)',
+          step: 'Pullback + Wings Simultâneos + Break Final!',
+          startTime: 24.0,
+          arriveTime: 27.5,
+          positions: {
+            d1: { x: -0.60, z: 0.48, angle: 0, ctrlX: -0.62, ctrlZ: 0.10, offsetBeats: 0, step: 'Pullback Frontal' },
+            d3: { x: 0.0, z: 0.48, angle: 0, ctrlX: 0.28, ctrlZ: 0.10, offsetBeats: 0, step: 'Wings Centro' },
+            d4: { x: 0.60, z: 0.48, angle: 0, ctrlX: 0.60, ctrlZ: 0.40, offsetBeats: 0, step: 'Pullback Frontal' },
+            d2: { x: -0.32, z: 0.05, angle: 0, ctrlX: -0.18, ctrlZ: -0.25, offsetBeats: 0, step: 'Maxie Ford' },
+            d5: { x: 0.32, z: 0.05, angle: 0, ctrlX: 0.18, ctrlZ: 0.25, offsetBeats: 0, step: 'Maxie Ford' },
+            d6: { x: 0.0, z: -0.35, angle: 0, ctrlX: -0.28, ctrlZ: -0.05, offsetBeats: 0, step: 'Over the Top' }
+          }
+        }
+      ];
+
+      project = {
+        title: 'Shim Sham Classic & Canon',
+        bpm: 120,
+        duration: 32,
+        dancers,
+        cues
+      };
+      activeCueIndex = 1;
+      selectedDancerId = 'd1';
+      currentTime = 4.0;
+      document.getElementById('bpmInput').value = project.bpm;
+      document.getElementById('durationInput').value = project.duration;
+      syncAllUI();
+    }
+
+    // =========================================================================
+    // 3. INTERPOLAÇÃO HÍBRIDA (HOLD -> START MOVE -> ARRIVE + OFFSET + BÉZIER)
+    // =========================================================================
+    function getBeatDuration() {
+      return 60 / Math.max(40, project.bpm || 120);
+    }
+
+    function normalizeAngleDiff(fromDeg, toDeg) {
+      let diff = ((toDeg - fromDeg + 180) % 360 + 360) % 360 - 180;
+      return fromDeg + diff;
+    }
+
+    function quadBezier(p0, p1, p2, t) {
+      const u = 1 - t;
+      return u * u * p0 + 2 * u * t * p1 + t * t * p2;
+    }
+
+    function getStageStateAtTime(t) {
+      const cues = project.cues;
+      if (!cues.length) return { cueIndex: 0, inTransition: false, progress: 1, positions: {}, cue: null };
+
+      // Find which cue interval we are in
+      let idx = 0;
+      for (let i = 1; i < cues.length; i++) {
+        if (t >= cues[i].startTime) idx = i;
+      }
+
+      const currCue = cues[idx];
+      const prevCue = idx > 0 ? cues[idx - 1] : currCue;
+      const beatSec = getBeatDuration();
+
+      const outPositions = {};
+      let anyInTransition = false;
+      let avgProgress = 1;
+
+      project.dancers.forEach((d) => {
+        const pPrev = (prevCue.positions && prevCue.positions[d.id]) || { x: 0, z: 0, angle: 0 };
+        const pCurr = (currCue.positions && currCue.positions[d.id]) || pPrev;
+
+        if (idx === 0) {
+          outPositions[d.id] = { ...pCurr, moving: false, t: 1 };
+          return;
+        }
+
+        const offsetSec = (pCurr.offsetBeats || 0) * beatSec;
+        const dStart = currCue.startTime + offsetSec;
+        const dArrive = Math.max(dStart + 0.05, currCue.arriveTime + offsetSec);
+
+        if (t <= dStart) {
+          outPositions[d.id] = { ...pPrev, moving: false, t: 0 };
+        } else if (t >= dArrive) {
+          outPositions[d.id] = { ...pCurr, moving: false, t: 1 };
+        } else {
+          anyInTransition = true;
+          const rawT = (t - dStart) / (dArrive - dStart);
+          // Smoothstep easing
+          const easeT = rawT * rawT * (3 - 2 * rawT);
+          avgProgress = easeT;
+
+          const midX = (pPrev.x + pCurr.x) / 2;
+          const midZ = (pPrev.z + pCurr.z) / 2;
+          const cx = (pCurr.ctrlX !== undefined && (pCurr.ctrlX !== 0 || pCurr.ctrlZ !== 0)) ? pCurr.ctrlX : midX;
+          const cz = (pCurr.ctrlZ !== undefined && (pCurr.ctrlX !== 0 || pCurr.ctrlZ !== 0)) ? pCurr.ctrlZ : midZ;
+
+          const x = quadBezier(pPrev.x, cx, pCurr.x, easeT);
+          const z = quadBezier(pPrev.z, cz, pCurr.z, easeT);
+          const targetAngle = normalizeAngleDiff(pPrev.angle || 0, pCurr.angle || 0);
+          const angle = (pPrev.angle || 0) + (targetAngle - (pPrev.angle || 0)) * easeT;
+
+          outPositions[d.id] = {
+            x,
+            z,
+            angle,
+            step: pCurr.step || '',
+            moving: true,
+            t: easeT
+          };
+        }
+      });
+
+      return {
+        cueIndex: idx,
+        prevCue,
+        cue: currCue,
+        inTransition: anyInTransition,
+        progress: avgProgress,
+        positions: outPositions
+      };
+    }
+
+    // =========================================================================
+    // 4. MAPA DE PALCO 2D (ORTOGONAL + COXIAS + CURVAS BÉZIER + FRENTE/COSTAS)
+    // =========================================================================
+    const canvas2d = document.getElementById('canvas2d');
+    const ctx2d = canvas2d.getContext('2d');
+    let dragMode2D = null; // 'dancer' | 'rotate' | 'curve' | null
+    let dragDancerId = null;
+
+    function getStageTransform2D() {
+      const w = canvas2d.width;
+      const h = canvas2d.height;
+      const stageW = Math.min(w * 0.66, (h - 110) * 1.35);
+      const stageH = stageW * 0.68;
+      const cx = w / 2;
+      const cy = h / 2;
+      return {
+        w, h, cx, cy, stageW, stageH,
+        toScreenX: (x) => cx + x * (stageW / 2),
+        toScreenY: (z) => cy + z * (stageH / 2),
+        toStageX: (px) => Math.max(-1.35, Math.min(1.35, (px - cx) / (stageW / 2))),
+        toStageZ: (py) => Math.max(-0.92, Math.min(0.92, (py - cy) / (stageH / 2)))
+      };
+    }
+
+    function drawStage2D() {
+      const rect = canvas2d.parentElement.getBoundingClientRect();
+      if (canvas2d.width !== Math.floor(rect.width) || canvas2d.height !== Math.floor(rect.height)) {
+        canvas2d.width = Math.floor(rect.width);
+        canvas2d.height = Math.floor(rect.height);
+      }
+
+      const tf = getStageTransform2D();
+      ctx2d.clearRect(0, 0, tf.w, tf.h);
+
+      const leftMain = tf.toScreenX(-1.0);
+      const rightMain = tf.toScreenX(1.0);
+      const topMain = tf.toScreenY(-1.0);
+      const botMain = tf.toScreenY(1.0);
+      const leftWing = tf.toScreenX(-1.38);
+      const rightWing = tf.toScreenX(1.38);
+
+      // 1. Coxias Laterais (Wings Left & Right)
+      ctx2d.fillStyle = 'rgba(148, 163, 184, 0.07)';
+      ctx2d.strokeStyle = 'rgba(148, 163, 184, 0.25)';
+      ctx2d.setLineDash([6, 4]);
+      ctx2d.fillRect(leftWing, topMain, leftMain - leftWing, botMain - topMain);
+      ctx2d.strokeRect(leftWing, topMain, leftMain - leftWing, botMain - topMain);
+      ctx2d.fillRect(rightMain, topMain, rightWing - rightMain, botMain - topMain);
+      ctx2d.strokeRect(rightMain, topMain, rightWing - rightMain, botMain - topMain);
+      ctx2d.setLineDash([]);
+
+      ctx2d.save();
+      ctx2d.fillStyle = 'rgba(148, 163, 184, 0.55)';
+      ctx2d.font = '700 11px Inter, sans-serif';
+      ctx2d.textAlign = 'center';
+      ctx2d.fillText('COXIA ESQ', (leftWing + leftMain) / 2, topMain + 20);
+      ctx2d.fillText('(WING L)', (leftWing + leftMain) / 2, topMain + 34);
+      ctx2d.fillText('COXIA DIR', (rightMain + rightWing) / 2, topMain + 20);
+      ctx2d.fillText('(WING R)', (rightMain + rightWing) / 2, topMain + 34);
+      ctx2d.restore();
+
+      // 2. Main Tap Stage Floor (Hardwood texture & grid)
+      const grad = ctx2d.createLinearGradient(0, topMain, 0, botMain);
+      grad.addColorStop(0, '#231c35');
+      grad.addColorStop(1, '#2d2342');
+      ctx2d.fillStyle = grad;
+      ctx2d.fillRect(leftMain, topMain, rightMain - leftMain, botMain - topMain);
+
+      ctx2d.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+      ctx2d.lineWidth = 2;
+      ctx2d.strokeRect(leftMain, topMain, rightMain - leftMain, botMain - topMain);
+
+      // Quarter & Center Grid Lines
+      ctx2d.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+      ctx2d.lineWidth = 1;
+      [-0.5, 0, 0.5].forEach((g) => {
+        const gx = tf.toScreenX(g);
+        const gy = tf.toScreenY(g);
+        ctx2d.beginPath();
+        ctx2d.moveTo(gx, topMain);
+        ctx2d.lineTo(gx, botMain);
+        ctx2d.stroke();
+        ctx2d.beginPath();
+        ctx2d.moveTo(leftMain, gy);
+        ctx2d.lineTo(rightMain, gy);
+        ctx2d.stroke();
+      });
+
+      // Stage Labels (Upstage / Downstage / Ribalta)
+      ctx2d.fillStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx2d.font = '800 11px Inter, sans-serif';
+      ctx2d.textAlign = 'center';
+      ctx2d.fillText('⬆️ FUNDO DO PALCO (UPSTAGE)', tf.cx, topMain + 16);
+
+      // Ribalta / Plateia Glow at Bottom
+      const ribGrad = ctx2d.createLinearGradient(leftMain, botMain - 8, leftMain, botMain + 18);
+      ribGrad.addColorStop(0, 'rgba(244, 63, 94, 0.55)');
+      ribGrad.addColorStop(1, 'rgba(244, 63, 94, 0.0)');
+      ctx2d.fillStyle = ribGrad;
+      ctx2d.fillRect(leftMain, botMain - 4, rightMain - leftMain, 20);
+      ctx2d.fillStyle = '#fb7185';
+      ctx2d.fillText('⬇️ FRENTE / PLATEIA (DOWNSTAGE • RIBALTA) ⬇️', tf.cx, botMain - 10);
+
+      // 3. Trajectories from previous Cue to active Cue (when editing/stopped or transitioning)
+      const st = getStageStateAtTime(currentTime);
+      const editCue = project.cues[activeCueIndex] || project.cues[0];
+      const prevCue = activeCueIndex > 0 ? project.cues[activeCueIndex - 1] : null;
+
+      if (prevCue && editCue) {
+        project.dancers.forEach((d) => {
+          const p0 = prevCue.positions[d.id];
+          const p2 = editCue.positions[d.id];
+          if (!p0 || !p2) return;
+          const dist = Math.hypot(p2.x - p0.x, p2.z - p0.z);
+          if (dist < 0.03) return;
+
+          const x0 = tf.toScreenX(p0.x);
+          const y0 = tf.toScreenY(p0.z);
+          const x2 = tf.toScreenX(p2.x);
+          const y2 = tf.toScreenY(p2.z);
+
+          const hasCustomCtrl = (p2.ctrlX !== undefined && (p2.ctrlX !== 0 || p2.ctrlZ !== 0));
+          const cxStage = hasCustomCtrl ? p2.ctrlX : (p0.x + p2.x) / 2;
+          const czStage = hasCustomCtrl ? p2.ctrlZ : (p0.z + p2.z) / 2;
+          const cx = tf.toScreenX(cxStage);
+          const cy = tf.toScreenY(czStage);
+
+          // Ghost start circle
+          ctx2d.save();
+          ctx2d.strokeStyle = d.color;
+          ctx2d.globalAlpha = 0.35;
+          ctx2d.setLineDash([4, 4]);
+          ctx2d.beginPath();
+          ctx2d.arc(x0, y0, 14, 0, Math.PI * 2);
+          ctx2d.stroke();
+
+          // Bézier curve
+          ctx2d.globalAlpha = d.id === selectedDancerId ? 0.92 : 0.48;
+          ctx2d.lineWidth = d.id === selectedDancerId ? 2.5 : 1.6;
+          ctx2d.beginPath();
+          ctx2d.moveTo(x0, y0);
+          ctx2d.quadraticCurveTo(cx, cy, x2, y2);
+          ctx2d.stroke();
+          ctx2d.setLineDash([]);
+
+          // Draggable curve control handle (at t=0.5 on curve)
+          const midCurveX = 0.25 * x0 + 0.5 * cx + 0.25 * x2;
+          const midCurveY = 0.25 * y0 + 0.5 * cy + 0.25 * y2;
+          ctx2d.fillStyle = d.color;
+          ctx2d.beginPath();
+          ctx2d.arc(midCurveX, midCurveY, d.id === selectedDancerId ? 6 : 4, 0, Math.PI * 2);
+          ctx2d.fill();
+          ctx2d.strokeStyle = '#000';
+          ctx2d.lineWidth = 1.5;
+          ctx2d.stroke();
+          ctx2d.restore();
+        });
+      }
+
+      // 4. Draw Dancers (Distinct Front / Back + Nose Direction Cone + Rotation Handle)
+      const renderPositions = isPlaying ? st.positions : (editCue ? editCue.positions : {});
+      project.dancers.forEach((d) => {
+        const pos = renderPositions[d.id] || { x: 0, z: 0, angle: 0 };
+        const px = tf.toScreenX(pos.x);
+        const py = tf.toScreenY(pos.z);
+        // Angle 0° = Facing Plateia (Downwards on canvas, which is +Y in screen coords, i.e., Math.PI/2)
+        const rad = ((pos.angle || 0) * Math.PI) / 180;
+        const canvasAngle = Math.PI / 2 - rad; // 0° -> +Y (down), 90° -> +X (right), -90° -> -X (left), 180° -> -Y (up)
+
+        const r = 21;
+        const isSel = d.id === selectedDancerId;
+
+        ctx2d.save();
+        ctx2d.translate(px, py);
+        ctx2d.rotate(canvasAngle);
+
+        // Selection halo
+        if (isSel) {
+          ctx2d.strokeStyle = '#ffffff';
+          ctx2d.lineWidth = 2.5;
+          ctx2d.beginPath();
+          ctx2d.arc(0, 0, r + 6, 0, Math.PI * 2);
+          ctx2d.stroke();
+        }
+
+        // Front Direction Cone / Spotlight Beam
+        const coneGrad = ctx2d.createRadialGradient(0, 0, r * 0.5, 0, 0, r * 2.1);
+        coneGrad.addColorStop(0, d.color + '88');
+        coneGrad.addColorStop(1, d.color + '00');
+        ctx2d.fillStyle = coneGrad;
+        ctx2d.beginPath();
+        ctx2d.moveTo(0, 0);
+        ctx2d.arc(0, 0, r * 2.1, -0.55, 0.55);
+        ctx2d.closePath();
+        ctx2d.fill();
+
+        // BACK HALF (Darker / Shaded — Costas)
+        ctx2d.fillStyle = '#1e293b';
+        ctx2d.beginPath();
+        ctx2d.arc(0, 0, r, Math.PI * 0.5, Math.PI * 1.5);
+        ctx2d.closePath();
+        ctx2d.fill();
+
+        // FRONT HALF (Bright Dancer Color — Frente)
+        ctx2d.fillStyle = d.color;
+        ctx2d.beginPath();
+        ctx2d.arc(0, 0, r, -Math.PI * 0.5, Math.PI * 0.5);
+        ctx2d.closePath();
+        ctx2d.fill();
+
+        // Dividing shoulder line & outer border
+        ctx2d.strokeStyle = '#ffffff';
+        ctx2d.lineWidth = 2;
+        ctx2d.beginPath();
+        ctx2d.arc(0, 0, r, 0, Math.PI * 2);
+        ctx2d.stroke();
+
+        ctx2d.beginPath();
+        ctx2d.moveTo(0, -r);
+        ctx2d.lineTo(0, r);
+        ctx2d.strokeStyle = 'rgba(255,255,255,0.65)';
+        ctx2d.lineWidth = 1.5;
+        ctx2d.stroke();
+
+        // Front Nose / Arrow Triangle at (+r, 0)
+        ctx2d.fillStyle = '#ffffff';
+        ctx2d.beginPath();
+        ctx2d.moveTo(r + 9, 0);
+        ctx2d.lineTo(r - 2, -7);
+        ctx2d.lineTo(r - 2, 7);
+        ctx2d.closePath();
+        ctx2d.fill();
+
+        // Rotation handle knob when selected (at r + 18)
+        if (isSel && !isPlaying) {
+          ctx2d.strokeStyle = '#fbbf24';
+          ctx2d.lineWidth = 1.5;
+          ctx2d.beginPath();
+          ctx2d.moveTo(r + 8, 0);
+          ctx2d.lineTo(r + 20, 0);
+          ctx2d.stroke();
+          ctx2d.fillStyle = '#fbbf24';
+          ctx2d.beginPath();
+          ctx2d.arc(r + 23, 0, 5, 0, Math.PI * 2);
+          ctx2d.fill();
+        }
+
+        ctx2d.restore();
+
+        // Upright Dancer Code / Name & Step Badge
+        ctx2d.save();
+        ctx2d.fillStyle = '#ffffff';
+        ctx2d.font = '900 12px Inter, sans-serif';
+        ctx2d.textAlign = 'center';
+        ctx2d.textBaseline = 'middle';
+        ctx2d.shadowColor = '#000';
+        ctx2d.shadowBlur = 4;
+        ctx2d.fillText(d.code, px, py);
+
+        ctx2d.font = '700 10px Inter, sans-serif';
+        ctx2d.fillStyle = '#e2e8f0';
+        ctx2d.fillText(d.name, px, py - r - 11);
+
+        if (pos.offsetBeats) {
+          ctx2d.fillStyle = '#fbbf24';
+          ctx2d.font = '800 9px Inter, sans-serif';
+          ctx2d.fillText(`+${pos.offsetBeats}t`, px + r + 10, py - r + 2);
+        }
+        ctx2d.restore();
+      });
+    }
+
+    // 2D Mouse / Touch Interaction (Move dancer, Rotate front/back, or Curve Bézier handle)
+    canvas2d.addEventListener('pointerdown', (e) => {
+      if (isPlaying) isPlaying = false;
+      const rect = canvas2d.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      const tf = getStageTransform2D();
+      const editCue = project.cues[activeCueIndex];
+      if (!editCue) return;
+
+      // 1. Check rotation handle of currently selected dancer
+      const selPos = editCue.positions[selectedDancerId];
+      if (selPos) {
+        const px = tf.toScreenX(selPos.x);
+        const py = tf.toScreenY(selPos.z);
+        const rad = ((selPos.angle || 0) * Math.PI) / 180;
+        const canvasAngle = Math.PI / 2 - rad;
+        const hx = px + Math.cos(canvasAngle) * 44;
+        const hy = py + Math.sin(canvasAngle) * 44;
+        if (Math.hypot(mx - hx, my - hy) < 13) {
+          dragMode2D = 'rotate';
+          dragDancerId = selectedDancerId;
+          canvas2d.setPointerCapture(e.pointerId);
+          return;
+        }
+      }
+
+      // 2. Check dancer body click
+      for (let i = project.dancers.length - 1; i >= 0; i--) {
+        const d = project.dancers[i];
+        const pos = editCue.positions[d.id];
+        if (!pos) continue;
+        const px = tf.toScreenX(pos.x);
+        const py = tf.toScreenY(pos.z);
+        if (Math.hypot(mx - px, my - py) <= 24) {
+          selectedDancerId = d.id;
+          dragMode2D = 'dancer';
+          dragDancerId = d.id;
+          canvas2d.setPointerCapture(e.pointerId);
+          syncDancerInspector();
+          renderDancerList();
+          return;
+        }
+      }
+
+      // 3. Check Bézier curve handle click
+      if (activeCueIndex > 0) {
+        const prevCue = project.cues[activeCueIndex - 1];
+        for (const d of project.dancers) {
+          const p0 = prevCue.positions[d.id];
+          const p2 = editCue.positions[d.id];
+          if (!p0 || !p2) continue;
+          const x0 = tf.toScreenX(p0.x), y0 = tf.toScreenY(p0.z);
+          const x2 = tf.toScreenX(p2.x), y2 = tf.toScreenY(p2.z);
+          const hasCustom = (p2.ctrlX !== undefined && (p2.ctrlX !== 0 || p2.ctrlZ !== 0));
+          const cx = tf.toScreenX(hasCustom ? p2.ctrlX : (p0.x + p2.x) / 2);
+          const cy = tf.toScreenY(hasCustom ? p2.ctrlZ : (p0.z + p2.z) / 2);
+          const midX = 0.25 * x0 + 0.5 * cx + 0.25 * x2;
+          const midY = 0.25 * y0 + 0.5 * cy + 0.25 * y2;
+          if (Math.hypot(mx - midX, my - midY) <= 12) {
+            selectedDancerId = d.id;
+            dragMode2D = 'curve';
+            dragDancerId = d.id;
+            canvas2d.setPointerCapture(e.pointerId);
+            syncDancerInspector();
+            renderDancerList();
+            return;
+          }
+        }
+      }
+    });
+
+    canvas2d.addEventListener('pointermove', (e) => {
+      if (!dragMode2D || !dragDancerId) return;
+      const rect = canvas2d.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      const tf = getStageTransform2D();
+      const editCue = project.cues[activeCueIndex];
+      if (!editCue || !editCue.positions[dragDancerId]) return;
+      const pos = editCue.positions[dragDancerId];
+
+      if (dragMode2D === 'dancer') {
+        pos.x = Math.round(tf.toStageX(mx) * 100) / 100;
+        pos.z = Math.round(tf.toStageZ(my) * 100) / 100;
+      } else if (dragMode2D === 'rotate') {
+        const px = tf.toScreenX(pos.x);
+        const py = tf.toScreenY(pos.z);
+        const canvasAngle = Math.atan2(my - py, mx - px);
+        let deg = Math.round(((Math.PI / 2 - canvasAngle) * 180) / Math.PI);
+        if (deg > 180) deg -= 360;
+        if (deg < -180) deg += 360;
+        // Snap to 15° increments
+        pos.angle = Math.round(deg / 15) * 15;
+        syncDancerInspector();
+      } else if (dragMode2D === 'curve' && activeCueIndex > 0) {
+        const prevPos = project.cues[activeCueIndex - 1].positions[dragDancerId];
+        const targetMidX = tf.toStageX(mx);
+        const targetMidZ = tf.toStageZ(my);
+        // Solve quadratic midpoint: mid = 0.25*p0 + 0.5*ctrl + 0.25*p2 => ctrl = 2*mid - 0.5*(p0+p2)
+        pos.ctrlX = Math.round((2 * targetMidX - 0.5 * (prevPos.x + pos.x)) * 100) / 100;
+        pos.ctrlZ = Math.round((2 * targetMidZ - 0.5 * (prevPos.z + pos.z)) * 100) / 100;
+      }
+    });
+
+    canvas2d.addEventListener('pointerup', () => {
+      dragMode2D = null;
+      dragDancerId = null;
+    });
+
+    // =========================================================================
+    // 5. PALCO 3D (THREE.JS + BONECOS BICOLORES + SAPATOS DE SAPATEADO + CÂMERAS)
+    // =========================================================================
+    let scene3d = null, camera3d = null, renderer3d = null, controls3d = null;
+    let dancerMeshes3d = {};
+    let pathLines3d = {};
+
+    function init3DStage() {
+      if (scene3d) return;
+      const container = document.getElementById('container3d');
+      scene3d = new THREE.Scene();
+      scene3d.background = new THREE.Color(0x090710);
+
+      camera3d = new THREE.PerspectiveCamera(45, container.clientWidth / Math.max(1, container.clientHeight), 0.1, 100);
+      camera3d.position.set(0, 7.5, 13.5);
+
+      renderer3d = new THREE.WebGLRenderer({ antialias: true });
+      renderer3d.setSize(container.clientWidth, container.clientHeight);
+      renderer3d.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      container.innerHTML = '';
+      container.appendChild(renderer3d.domElement);
+
+      controls3d = new THREE.OrbitControls(camera3d, renderer3d.domElement);
+      controls3d.enableDamping = true;
+      controls3d.dampingFactor = 0.08;
+      controls3d.target.set(0, 0.8, 0);
+
+      // Lighting
+      const amb = new THREE.AmbientLight(0xffffff, 0.65);
+      scene3d.add(amb);
+      const dirLight = new THREE.DirectionalLight(0xfff7ed, 0.9);
+      dirLight.position.set(5, 14, 9);
+      scene3d.add(dirLight);
+
+      // Main Stage Hardwood Platform (Width 10, Depth 7)
+      const stageGeo = new THREE.BoxGeometry(10, 0.4, 7);
+      const stageMat = new THREE.MeshStandardMaterial({ color: 0x2c223e, roughness: 0.55 });
+      const stageMesh = new THREE.Mesh(stageGeo, stageMat);
+      stageMesh.position.y = -0.2;
+      scene3d.add(stageMesh);
+
+      // Stage Grid
+      const grid = new THREE.GridHelper(10, 10, 0xf43f5e, 0x475569);
+      grid.scale.z = 0.7;
+      grid.position.y = 0.01;
+      scene3d.add(grid);
+
+      // Downstage Ribalta Neon Strip (Front / Plateia at Z = +3.5)
+      const ribGeo = new THREE.BoxGeometry(10, 0.08, 0.14);
+      const ribMat = new THREE.MeshBasicMaterial({ color: 0xf43f5e });
+      const ribMesh = new THREE.Mesh(ribGeo, ribMat);
+      ribMesh.position.set(0, 0.04, 3.5);
+      scene3d.add(ribMesh);
+
+      // Left & Right Wings (Coxias) Translucent Curtains & Floor
+      const wingFloorGeo = new THREE.BoxGeometry(2.0, 0.36, 7);
+      const wingFloorMat = new THREE.MeshStandardMaterial({ color: 0x161224, roughness: 0.8 });
+      const leftWingFloor = new THREE.Mesh(wingFloorGeo, wingFloorMat);
+      leftWingFloor.position.set(-6.05, -0.2, 0);
+      scene3d.add(leftWingFloor);
+      const rightWingFloor = new THREE.Mesh(wingFloorGeo, wingFloorMat);
+      rightWingFloor.position.set(6.05, -0.2, 0);
+      scene3d.add(rightWingFloor);
+
+      const curtainGeo = new THREE.BoxGeometry(0.08, 2.8, 6.8);
+      const curtainMat = new THREE.MeshStandardMaterial({ color: 0x334155, transparent: true, opacity: 0.32 });
+      const leftCurtain = new THREE.Mesh(curtainGeo, curtainMat);
+      leftCurtain.position.set(-5.0, 1.4, 0);
+      scene3d.add(leftCurtain);
+      const rightCurtain = new THREE.Mesh(curtainGeo, curtainMat);
+      rightCurtain.position.set(5.0, 1.4, 0);
+      scene3d.add(rightCurtain);
+    }
+
+    function makeLabelSprite(code, name, color) {
+      const c = document.createElement('canvas');
+      c.width = 256;
+      c.height = 96;
+      const g = c.getContext('2d');
+      g.fillStyle = 'rgba(15, 12, 28, 0.85)';
+      g.strokeStyle = color;
+      g.lineWidth = 5;
+      g.beginPath();
+      g.roundRect(12, 12, 232, 72, 22);
+      g.fill();
+      g.stroke();
+      g.fillStyle = '#ffffff';
+      g.font = '900 32px Inter, sans-serif';
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText(name, 128, 48);
+      const tex = new THREE.CanvasTexture(c);
+      const mat = new THREE.SpriteMaterial({ map: tex, transparent: true });
+      const sp = new THREE.Sprite(mat);
+      sp.scale.set(1.7, 0.64, 1);
+      sp.position.set(0, 2.25, 0);
+      return sp;
+    }
+
+    function rebuild3DDancers() {
+      if (!scene3d) return;
+      Object.values(dancerMeshes3d).forEach((grp) => scene3d.remove(grp));
+      dancerMeshes3d = {};
+
+      project.dancers.forEach((d) => {
+        const group = new THREE.Group();
+
+        // 1. Two-tone Torso (Front bright dancer color + white chest plate; Back dark slate)
+        const backGeo = new THREE.BoxGeometry(0.56, 0.82, 0.16);
+        const backMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6 });
+        const backMesh = new THREE.Mesh(backGeo, backMat);
+        backMesh.position.set(0, 1.0, -0.08);
+        group.add(backMesh);
+
+        const frontGeo = new THREE.BoxGeometry(0.58, 0.84, 0.16);
+        const frontMat = new THREE.MeshStandardMaterial({ color: d.color, roughness: 0.35 });
+        const frontMesh = new THREE.Mesh(frontGeo, frontMat);
+        frontMesh.position.set(0, 1.0, 0.08);
+        group.add(frontMesh);
+
+        // White V-Vest Lapel on Front Chest so Front is unmistakable from afar
+        const vestGeo = new THREE.BoxGeometry(0.34, 0.45, 0.04);
+        const vestMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const vestMesh = new THREE.Mesh(vestGeo, vestMat);
+        vestMesh.position.set(0, 1.08, 0.17);
+        group.add(vestMesh);
+
+        // 2. Head + Front Visor/Nose
+        const headGeo = new THREE.SphereGeometry(0.23, 20, 20);
+        const headMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc });
+        const headMesh = new THREE.Mesh(headGeo, headMat);
+        headMesh.position.set(0, 1.68, 0);
+        group.add(headMesh);
+
+        const visorGeo = new THREE.BoxGeometry(0.28, 0.1, 0.12);
+        const visorMat = new THREE.MeshBasicMaterial({ color: 0x0f172a });
+        const visorMesh = new THREE.Mesh(visorGeo, visorMat);
+        visorMesh.position.set(0, 1.70, 0.20);
+        group.add(visorMesh);
+
+        // 3. Tap Shoes (Left & Right with silver tap tips)
+        const shoeGeo = new THREE.BoxGeometry(0.20, 0.14, 0.38);
+        const shoeMat = new THREE.MeshStandardMaterial({ color: 0x111827 });
+        const tapTipGeo = new THREE.BoxGeometry(0.21, 0.05, 0.12);
+        const tapTipMat = new THREE.MeshBasicMaterial({ color: 0xfbbf24 });
+
+        const leftShoe = new THREE.Group();
+        const lsMesh = new THREE.Mesh(shoeGeo, shoeMat);
+        const lsTip = new THREE.Mesh(tapTipGeo, tapTipMat);
+        lsTip.position.set(0, -0.04, 0.15);
+        leftShoe.add(lsMesh);
+        leftShoe.add(lsTip);
+        leftShoe.position.set(-0.16, 0.08, 0.05);
+        group.add(leftShoe);
+
+        const rightShoe = new THREE.Group();
+        const rsMesh = new THREE.Mesh(shoeGeo, shoeMat);
+        const rsTip = new THREE.Mesh(tapTipGeo, tapTipMat);
+        rsTip.position.set(0, -0.04, 0.15);
+        rightShoe.add(rsMesh);
+        rightShoe.add(rsTip);
+        rightShoe.position.set(0.16, 0.08, 0.05);
+        group.add(rightShoe);
+
+        // 4. Floor Direction Arrow (points +Z in local space = Front of dancer)
+        const arrowShape = new THREE.Shape();
+        arrowShape.moveTo(0, 0.72);
+        arrowShape.lineTo(-0.28, 0.28);
+        arrowShape.lineTo(0.28, 0.28);
+        arrowShape.closePath();
+        const arrowGeo = new THREE.ShapeGeometry(arrowShape);
+        const arrowMat = new THREE.MeshBasicMaterial({ color: d.color, side: THREE.DoubleSide });
+        const arrowMesh = new THREE.Mesh(arrowGeo, arrowMat);
+        arrowMesh.rotation.x = Math.PI / 2;
+        arrowMesh.position.y = 0.02;
+        group.add(arrowMesh);
+
+        // 5. Floating Name Sprite
+        const sp = makeLabelSprite(d.code, d.name, d.color);
+        group.add(sp);
+
+        group.userData = { leftShoe, rightShoe };
+        scene3d.add(group);
+        dancerMeshes3d[d.id] = group;
+      });
+    }
+
+    function set3DCamera(preset) {
+      if (!camera3d || !controls3d) return;
+      controls3d.target.set(0, 0.8, 0);
+      if (preset === 'audience') {
+        camera3d.position.set(0, 4.2, 12.5);
+      } else if (preset === 'choreo') {
+        camera3d.position.set(6.5, 8.2, 10.5);
+      } else if (preset === 'dancer') {
+        // Mirror / From Upstage looking toward Downstage (Plateia)
+        camera3d.position.set(0, 4.8, -11.8);
+      } else if (preset === 'side') {
+        camera3d.position.set(12.5, 4.2, 0);
+      } else if (preset === 'top') {
+        camera3d.position.set(0, 16.5, 0.01);
+      }
+      controls3d.update();
+    }
+
+    function updateAndRender3D() {
+      if (!scene3d || viewMode !== '3d') return;
+      const container = document.getElementById('container3d');
+      if (renderer3d.domElement.width !== container.clientWidth || renderer3d.domElement.height !== container.clientHeight) {
+        camera3d.aspect = container.clientWidth / Math.max(1, container.clientHeight);
+        camera3d.updateProjectionMatrix();
+        renderer3d.setSize(container.clientWidth, container.clientHeight);
+      }
+
+      const st = getStageStateAtTime(currentTime);
+      const editCue = project.cues[activeCueIndex] || project.cues[0];
+      const renderPositions = isPlaying ? st.positions : (editCue ? editCue.positions : {});
+      const beatPhase = (currentTime / getBeatDuration()) * Math.PI * 2;
+
+      project.dancers.forEach((d, idx) => {
+        const grp = dancerMeshes3d[d.id];
+        if (!grp) return;
+        const pos = renderPositions[d.id] || { x: 0, z: 0, angle: 0 };
+        grp.position.x = pos.x * 5.0; // Stage [-1..1] -> [-5..5]
+        grp.position.z = pos.z * 3.5; // Stage [-1..1] -> [-3.5..3.5]
+        grp.rotation.y = ((pos.angle || 0) * Math.PI) / 180;
+
+        // Animated tap shoes when playing
+        const { leftShoe, rightShoe } = grp.userData;
+        if (isPlaying) {
+          leftShoe.position.y = 0.08 + Math.max(0, Math.sin(beatPhase + idx)) * 0.12;
+          rightShoe.position.y = 0.08 + Math.max(0, -Math.sin(beatPhase + idx)) * 0.12;
+        } else {
+          leftShoe.position.y = 0.08;
+          rightShoe.position.y = 0.08;
+        }
+      });
+
+      controls3d.update();
+      renderer3d.render(scene3d, camera3d);
+    }
+
+    function setViewMode(mode) {
+      viewMode = mode;
+      document.getElementById('btnView2D').classList.toggle('active', mode === '2d');
+      document.getElementById('btnView3D').classList.toggle('active', mode === '3d');
+      document.getElementById('canvas2d').style.display = mode === '2d' ? 'block' : 'none';
+      document.getElementById('container3d').style.display = mode === '3d' ? 'block' : 'none';
+      document.getElementById('camBar').classList.toggle('visible', mode === '3d');
+      if (mode === '3d') {
+        init3DStage();
+        rebuild3DDancers();
+        updateAndRender3D();
+      }
+    }
+
+    // =========================================================================
+    // 6. TIMELINE INTERATIVA (OITOS + WAVEFORM + INÍCIO DA TRANSIÇÃO / CHEGADA)
+    // =========================================================================
+    const tlCanvas = document.getElementById('timelineCanvas');
+    const tlCtx = tlCanvas.getContext('2d');
+    let tlDragType = null; // 'scrub' | 'cueStart' | 'cueArrive'
+    let tlDragCueIndex = -1;
+
+    function timeToX(t, w) {
+      const padL = 16, padR = 16;
+      return padL + (t / Math.max(1, project.duration)) * (w - padL - padR);
+    }
+    function xToTime(x, w) {
+      const padL = 16, padR = 16;
+      const ratio = (x - padL) / Math.max(1, w - padL - padR);
+      return Math.max(0, Math.min(project.duration, ratio * project.duration));
+    }
+
+    function drawTimeline() {
+      const rect = tlCanvas.parentElement.getBoundingClientRect();
+      if (tlCanvas.width !== Math.floor(rect.width) || tlCanvas.height !== Math.floor(rect.height)) {
+        tlCanvas.width = Math.floor(rect.width);
+        tlCanvas.height = Math.floor(rect.height);
+      }
+      const w = tlCanvas.width;
+      const h = tlCanvas.height;
+      tlCtx.clearRect(0, 0, w, h);
+
+      // 1. 8-Count ("Oitos") Ruler at Top
+      const beatSec = getBeatDuration();
+      const eightSec = beatSec * 8;
+      tlCtx.fillStyle = '#141126';
+      tlCtx.fillRect(0, 0, w, 32);
+
+      let beatIdx = 0;
+      for (let t = 0; t <= project.duration + 0.01; t += beatSec) {
+        const x = timeToX(t, w);
+        const isEightStart = (beatIdx % 8 === 0);
+        tlCtx.strokeStyle = isEightStart ? 'rgba(245, 158, 11, 0.65)' : 'rgba(255, 255, 255, 0.12)';
+        tlCtx.lineWidth = isEightStart ? 1.5 : 1;
+        tlCtx.beginPath();
+        tlCtx.moveTo(x, isEightStart ? 0 : 18);
+        tlCtx.lineTo(x, h);
+        tlCtx.stroke();
+
+        if (isEightStart) {
+          const eightNum = Math.floor(beatIdx / 8) + 1;
+          tlCtx.fillStyle = '#fbbf24';
+          tlCtx.font = '800 10px Inter, sans-serif';
+          tlCtx.fillText(`Oito ${eightNum} (${t.toFixed(1)}s)`, x + 4, 13);
+        } else if (w > 700) {
+          tlCtx.fillStyle = 'rgba(148, 163, 184, 0.5)';
+          tlCtx.font = '600 9px Inter, sans-serif';
+          tlCtx.fillText(`${(beatIdx % 8) + 1}`, x + 2, 27);
+        }
+        beatIdx++;
+      }
+
+      // 2. Audio Waveform Track (middle band)
+      const waveY = 58;
+      const waveH = 26;
+      if (waveformPeaks.length > 0) {
+        tlCtx.fillStyle = 'rgba(56, 189, 248, 0.28)';
+        const padL = 16, padR = 16;
+        const usableW = w - padL - padR;
+        for (let i = 0; i < waveformPeaks.length; i++) {
+          const px = padL + (i / waveformPeaks.length) * usableW;
+          const ph = Math.max(2, waveformPeaks[i] * waveH);
+          tlCtx.fillRect(px, waveY - ph, Math.max(1.5, usableW / waveformPeaks.length - 0.5), ph * 2);
+        }
+      }
+
+      // 3. Cues Track: Transition Bar (◆ Start Move -> ■ Arrive Pose) + Hold Bar
+      const trackY = 92;
+      const trackH = 44;
+      project.cues.forEach((cue, idx) => {
+        const xStart = timeToX(cue.startTime, w);
+        const xArrive = timeToX(cue.arriveTime, w);
+        const nextCue = project.cues[idx + 1];
+        const xHoldEnd = nextCue ? timeToX(nextCue.startTime, w) : timeToX(project.duration, w);
+        const isSel = idx === activeCueIndex;
+
+        // Transition region (Start -> Arrive)
+        if (xArrive > xStart + 2) {
+          const tGrad = tlCtx.createLinearGradient(xStart, 0, xArrive, 0);
+          tGrad.addColorStop(0, 'rgba(245, 158, 11, 0.35)');
+          tGrad.addColorStop(1, 'rgba(244, 63, 94, 0.45)');
+          tlCtx.fillStyle = tGrad;
+          tlCtx.fillRect(xStart, trackY, xArrive - xStart, trackH);
+          tlCtx.strokeStyle = isSel ? '#fbbf24' : 'rgba(245, 158, 11, 0.65)';
+          tlCtx.lineWidth = isSel ? 2 : 1;
+          tlCtx.strokeRect(xStart, trackY, xArrive - xStart, trackH);
+        }
+
+        // Hold region (Arrive -> Next Start)
+        if (xHoldEnd > xArrive) {
+          tlCtx.fillStyle = isSel ? 'rgba(244, 63, 94, 0.26)' : 'rgba(56, 189, 248, 0.14)';
+          tlCtx.fillRect(xArrive, trackY, xHoldEnd - xArrive, trackH);
+          tlCtx.strokeStyle = isSel ? '#f43f5e' : 'rgba(56, 189, 248, 0.4)';
+          tlCtx.lineWidth = isSel ? 2 : 1;
+          tlCtx.strokeRect(xArrive, trackY, xHoldEnd - xArrive, trackH);
+        }
+
+        // Handle ◆ Start Move (Orange Diamond)
+        if (idx > 0) {
+          tlCtx.fillStyle = '#fbbf24';
+          tlCtx.beginPath();
+          tlCtx.moveTo(xStart, trackY - 7);
+          tlCtx.lineTo(xStart + 7, trackY);
+          tlCtx.lineTo(xStart, trackY + 7);
+          tlCtx.lineTo(xStart - 7, trackY);
+          tlCtx.closePath();
+          tlCtx.fill();
+        }
+
+        // Handle ■ Arrive / Formation Keyframe (Cyan Square)
+        tlCtx.fillStyle = '#38bdf8';
+        tlCtx.fillRect(xArrive - 6, trackY + trackH - 6, 12, 12);
+
+        // Cue Title & Step inside bar
+        tlCtx.save();
+        tlCtx.beginPath();
+        tlCtx.rect(xStart + 4, trackY, Math.max(0, xHoldEnd - xStart - 8), trackH);
+        tlCtx.clip();
+        tlCtx.fillStyle = '#ffffff';
+        tlCtx.font = '800 11px Inter, sans-serif';
+        tlCtx.fillText(cue.name, xStart + 8, trackY + 17);
+        tlCtx.fillStyle = '#cbd5e1';
+        tlCtx.font = '600 10px Inter, sans-serif';
+        tlCtx.fillText(`👞 ${cue.step || ''}`, xStart + 8, trackY + 33);
+        tlCtx.restore();
+      });
+
+      // 4. Playhead Needle
+      const px = timeToX(currentTime, w);
+      tlCtx.strokeStyle = '#f43f5e';
+      tlCtx.lineWidth = 2.5;
+      tlCtx.beginPath();
+      tlCtx.moveTo(px, 0);
+      tlCtx.lineTo(px, h);
+      tlCtx.stroke();
+
+      tlCtx.fillStyle = '#f43f5e';
+      tlCtx.beginPath();
+      tlCtx.moveTo(px - 7, 0);
+      tlCtx.lineTo(px + 7, 0);
+      tlCtx.lineTo(px, 11);
+      tlCtx.closePath();
+      tlCtx.fill();
+    }
+
+    tlCanvas.addEventListener('pointerdown', (e) => {
+      const rect = tlCanvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      const w = tlCanvas.width;
+      const trackY = 92;
+      const trackH = 44;
+
+      // Check ◆ Start Move or ■ Arrive handles
+      for (let i = 0; i < project.cues.length; i++) {
+        const c = project.cues[i];
+        const xs = timeToX(c.startTime, w);
+        const xa = timeToX(c.arriveTime, w);
+        if (i > 0 && Math.hypot(mx - xs, my - trackY) <= 11) {
+          activeCueIndex = i;
+          tlDragType = 'cueStart';
+          tlDragCueIndex = i;
+          tlCanvas.setPointerCapture(e.pointerId);
+          syncCueInspector();
+          renderCueList();
+          return;
+        }
+        if (Math.hypot(mx - xa, my - (trackY + trackH)) <= 11) {
+          activeCueIndex = i;
+          tlDragType = 'cueArrive';
+          tlDragCueIndex = i;
+          tlCanvas.setPointerCapture(e.pointerId);
+          syncCueInspector();
+          renderCueList();
+          return;
+        }
+      }
+
+      // Check clicking inside a cue block to select it
+      const clickedT = xToTime(mx, w);
+      for (let i = project.cues.length - 1; i >= 0; i--) {
+        if (clickedT >= project.cues[i].startTime) {
+          activeCueIndex = i;
+          syncCueInspector();
+          renderCueList();
+          break;
+        }
+      }
+
+      tlDragType = 'scrub';
+      seekTo(clickedT);
+      tlCanvas.setPointerCapture(e.pointerId);
+    });
+
+    tlCanvas.addEventListener('pointermove', (e) => {
+      if (!tlDragType) return;
+      const rect = tlCanvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const t = Math.round(xToTime(mx, tlCanvas.width) * 4) / 4; // Snap to 0.25s
+
+      if (tlDragType === 'scrub') {
+        seekTo(t);
+      } else if (tlDragType === 'cueStart' && tlDragCueIndex > 0) {
+        const cue = project.cues[tlDragCueIndex];
+        const prevCue = project.cues[tlDragCueIndex - 1];
+        cue.startTime = Math.max(prevCue.arriveTime, Math.min(cue.arriveTime, t));
+        syncCueInspector();
+        renderCueList();
+      } else if (tlDragType === 'cueArrive' && tlDragCueIndex >= 0) {
+        const cue = project.cues[tlDragCueIndex];
+        const nextCue = project.cues[tlDragCueIndex + 1];
+        const maxT = nextCue ? nextCue.startTime : project.duration;
+        cue.arriveTime = Math.max(cue.startTime, Math.min(maxT, t));
+        syncCueInspector();
+        renderCueList();
+      }
+    });
+
+    tlCanvas.addEventListener('pointerup', () => {
+      tlDragType = null;
+      tlDragCueIndex = -1;
+    });
+
+    // =========================================================================
+    // 7. CONTROLES DE ELENCO, FORMAÇÕES, CUES E ÁUDIO
+    // =========================================================================
+    function renderDancerList() {
+      const box = document.getElementById('dancerList');
+      document.getElementById('dancerCountLabel').textContent = project.dancers.length;
+      box.innerHTML = project.dancers.map((d) => `
+        <div class="dancer-row ${d.id === selectedDancerId ? 'selected' : ''}" onclick="selectDancer('${d.id}')">
+          <div class="dancer-badge" style="background:${d.color};">${d.code}</div>
+          <input type="text" class="dancer-name-input" value="${d.name}" onclick="event.stopPropagation()" oninput="renameDancer('${d.id}', this.value)" />
+          <input type="color" class="dancer-color-input" value="${d.color}" onclick="event.stopPropagation()" oninput="recolorDancer('${d.id}', this.value)" />
+          <button type="button" class="btn" style="padding:1px 5px;font-size:0.68rem;" onclick="event.stopPropagation();removeDancer('${d.id}')" title="Remover">✕</button>
+        </div>
+      `).join('');
+    }
+
+    function selectDancer(id) {
+      selectedDancerId = id;
+      renderDancerList();
+      syncDancerInspector();
+    }
+
+    function renameDancer(id, val) {
+      const d = project.dancers.find((x) => x.id === id);
+      if (d) {
+        d.name = val;
+        d.code = (val.trim()[0] || d.code).toUpperCase();
+        if (viewMode === '3d') rebuild3DDancers();
+      }
+    }
+
+    function recolorDancer(id, val) {
+      const d = project.dancers.find((x) => x.id === id);
+      if (d) {
+        d.color = val;
+        renderDancerList();
+        if (viewMode === '3d') rebuild3DDancers();
+      }
+    }
+
+    function addDancer() {
+      const idx = project.dancers.length;
+      const code = String.fromCharCode(65 + (idx % 26));
+      const id = 'd_' + Date.now().toString(36) + '_' + idx;
+      const color = DANCER_COLORS[idx % DANCER_COLORS.length];
+      project.dancers.push({ id, code, name: `${code} - Tap ${idx + 1}`, color });
+      project.cues.forEach((c) => {
+        c.positions[id] = { x: 0, z: 0, angle: 0, ctrlX: 0, ctrlZ: 0, offsetBeats: 0, step: '' };
+      });
+      selectedDancerId = id;
+      if (viewMode === '3d') rebuild3DDancers();
+      syncAllUI();
+    }
+
+    function removeDancer(id) {
+      if (project.dancers.length <= 1) return;
+      project.dancers = project.dancers.filter((d) => d.id !== id);
+      project.cues.forEach((c) => delete c.positions[id]);
+      if (selectedDancerId === id) selectedDancerId = project.dancers[0].id;
+      if (viewMode === '3d') rebuild3DDancers();
+      syncAllUI();
+    }
+
+    function setCastSize(n) {
+      while (project.dancers.length < n) addDancer();
+      while (project.dancers.length > n) removeDancer(project.dancers[project.dancers.length - 1].id);
+      applyQuickFormation('line');
+    }
+
+    function applyQuickFormation(type) {
+      const cue = project.cues[activeCueIndex];
+      if (!cue) return;
+      const n = project.dancers.length;
+      project.dancers.forEach((d, i) => {
+        const pos = cue.positions[d.id] || { x: 0, z: 0, angle: 0, ctrlX: 0, ctrlZ: 0, offsetBeats: 0, step: '' };
+        if (type === 'line') {
+          pos.x = n === 1 ? 0 : -0.75 + (1.5 * i) / (n - 1);
+          pos.z = 0.15;
+          pos.angle = 0;
+        } else if (type === 'stagger') {
+          const row = i % 2;
+          pos.x = n === 1 ? 0 : -0.75 + (1.5 * i) / (n - 1);
+          pos.z = row === 0 ? 0.38 : -0.18;
+          pos.angle = 0;
+        } else if (type === 'wedge') {
+          const norm = n === 1 ? 0 : -1 + (2 * i) / (n - 1);
+          pos.x = norm * 0.78;
+          pos.z = 0.45 - Math.abs(norm) * 0.8;
+          pos.angle = 0;
+        } else if (type === 'diagonal') {
+          const norm = n === 1 ? 0 : -1 + (2 * i) / (n - 1);
+          pos.x = norm * 0.75;
+          pos.z = norm * 0.55;
+          pos.angle = -30;
+        } else if (type === 'circle') {
+          const ang = Math.PI * 0.15 + (Math.PI * 0.7 * i) / Math.max(1, n - 1);
+          pos.x = Math.cos(ang) * 0.72;
+          pos.z = -Math.sin(ang) * 0.45 + 0.15;
+          pos.angle = 0;
+        } else if (type === 'wings') {
+          const side = i % 2 === 0 ? -1.18 : 1.18;
+          pos.x = side;
+          pos.z = -0.4 + Math.floor(i / 2) * 0.32;
+          pos.angle = side < 0 ? 90 : -90;
+        }
+        pos.ctrlX = 0;
+        pos.ctrlZ = 0;
+        cue.positions[d.id] = pos;
+      });
+    }
+
+    function syncDancerInspector() {
+      const d = project.dancers.find((x) => x.id === selectedDancerId) || project.dancers[0];
+      const cue = project.cues[activeCueIndex];
+      if (!d || !cue) return;
+      const pos = cue.positions[d.id] || { x: 0, z: 0, angle: 0, offsetBeats: 0, step: '' };
+      document.getElementById('inspDancerName').textContent = d.name;
+      document.getElementById('inspAngleRange').value = pos.angle || 0;
+      document.getElementById('inspAngleVal').textContent = `${pos.angle || 0}°`;
+      document.getElementById('inspOffsetVal').textContent = `+${pos.offsetBeats || 0}t`;
+      document.getElementById('inspCustomStep').value = pos.step || '';
+    }
+
+    function updateSelectedDancerAngle(val) {
+      const cue = project.cues[activeCueIndex];
+      if (!cue || !cue.positions[selectedDancerId]) return;
+      cue.positions[selectedDancerId].angle = Number(val);
+      syncDancerInspector();
+    }
+
+    function setDancerOffsetBeats(beats, cascadeAll = false) {
+      const cue = project.cues[activeCueIndex];
+      if (!cue) return;
+      if (cascadeAll) {
+        project.dancers.forEach((d, i) => {
+          if (cue.positions[d.id]) cue.positions[d.id].offsetBeats = i * beats;
+        });
+      } else if (cue.positions[selectedDancerId]) {
+        cue.positions[selectedDancerId].offsetBeats = beats;
+      }
+      syncDancerInspector();
+    }
+
+    function updateSelectedDancerStep(val) {
+      const cue = project.cues[activeCueIndex];
+      if (!cue || !cue.positions[selectedDancerId]) return;
+      cue.positions[selectedDancerId].step = val;
+    }
+
+    function resetSelectedDancerCurve() {
+      const cue = project.cues[activeCueIndex];
+      if (!cue || !cue.positions[selectedDancerId]) return;
+      cue.positions[selectedDancerId].ctrlX = 0;
+      cue.positions[selectedDancerId].ctrlZ = 0;
+    }
+
+    function renderCueList() {
+      const box = document.getElementById('cueList');
+      box.innerHTML = project.cues.map((c, idx) => `
+        <div class="cue-item ${idx === activeCueIndex ? 'active' : ''}" onclick="selectCue(${idx})">
+          <div class="cue-item-top">
+            <span>${c.name}</span>
+            <span style="color:var(--accent-cyan);">${c.startTime.toFixed(1)}s ➔ ${c.arriveTime.toFixed(1)}s</span>
+          </div>
+          <div class="cue-item-sub">
+            <span>👞 ${c.step || 'Sem passo definido'}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function selectCue(idx) {
+      activeCueIndex = idx;
+      isPlaying = false;
+      currentTime = project.cues[idx].arriveTime;
+      syncCueInspector();
+      syncDancerInspector();
+      renderCueList();
+    }
+
+    function syncCueInspector() {
+      const c = project.cues[activeCueIndex];
+      if (!c) return;
+      document.getElementById('cueNameInput').value = c.name;
+      document.getElementById('cueStepInput').value = c.step || '';
+      document.getElementById('cueStartInput').value = c.startTime;
+      document.getElementById('cueArriveInput').value = c.arriveTime;
+    }
+
+    function updateActiveCueMeta() {
+      const c = project.cues[activeCueIndex];
+      if (!c) return;
+      c.name = document.getElementById('cueNameInput').value;
+      c.step = document.getElementById('cueStepInput').value;
+      renderCueList();
+    }
+
+    function setCueStepQuick(stepName) {
+      const inp = document.getElementById('cueStepInput');
+      inp.value = inp.value ? `${inp.value} + ${stepName}` : stepName;
+      updateActiveCueMeta();
+    }
+
+    function updateActiveCueTiming() {
+      const c = project.cues[activeCueIndex];
+      if (!c) return;
+      c.startTime = Math.max(0, Number(document.getElementById('cueStartInput').value) || 0);
+      c.arriveTime = Math.max(c.startTime, Number(document.getElementById('cueArriveInput').value) || c.startTime);
+      project.cues.sort((a, b) => a.startTime - b.startTime);
+      renderCueList();
+    }
+
+    function markCueStartNow() {
+      const c = project.cues[activeCueIndex];
+      if (!c) return;
+      c.startTime = Math.round(currentTime * 4) / 4;
+      if (c.arriveTime < c.startTime) c.arriveTime = c.startTime + 1.0;
+      syncCueInspector();
+      renderCueList();
+    }
+
+    function markCueArriveNow() {
+      const c = project.cues[activeCueIndex];
+      if (!c) return;
+      c.arriveTime = Math.max(c.startTime, Math.round(currentTime * 4) / 4);
+      syncCueInspector();
+      renderCueList();
+    }
+
+    function addCueAtCurrentTime() {
+      const st = getStageStateAtTime(currentTime);
+      const startT = Math.round(currentTime * 4) / 4;
+      const arriveT = Math.min(project.duration, startT + 2.0);
+      const newPos = {};
+      project.dancers.forEach((d) => {
+        const cur = st.positions[d.id] || { x: 0, z: 0, angle: 0 };
+        newPos[d.id] = { x: cur.x, z: cur.z, angle: cur.angle || 0, ctrlX: 0, ctrlZ: 0, offsetBeats: 0, step: '' };
+      });
+      const newCue = {
+        id: 'cue_' + Date.now().toString(36),
+        name: `Cue ${project.cues.length + 1} — Nova Formação`,
+        step: 'Time Step',
+        startTime: startT,
+        arriveTime: arriveT,
+        positions: newPos
+      };
+      project.cues.push(newCue);
+      project.cues.sort((a, b) => a.startTime - b.startTime);
+      activeCueIndex = project.cues.indexOf(newCue);
+      currentTime = arriveT;
+      syncAllUI();
+    }
+
+    function deleteActiveCue() {
+      if (project.cues.length <= 1) return;
+      project.cues.splice(activeCueIndex, 1);
+      activeCueIndex = Math.max(0, activeCueIndex - 1);
+      syncAllUI();
+    }
+
+    // =========================================================================
+    // 8. TRANSPORTE, METRÔNOMO, UPLOAD DE ÁUDIO E LOOP PRINCIPAL
+    // =========================================================================
+    function togglePlay() {
+      ensureAudioCtx();
+      isPlaying = !isPlaying;
+      if (isPlaying && currentTime >= project.duration) currentTime = 0;
+      lastFrameTs = performance.now();
+      lastBeatPlayed = Math.floor(currentTime / getBeatDuration());
+      if (audioElement) {
+        if (isPlaying) {
+          audioElement.currentTime = currentTime;
+          audioElement.playbackRate = playbackSpeed;
+          audioElement.play().catch(() => {});
+        } else {
+          audioElement.pause();
+        }
+      }
+      document.getElementById('btnPlayPause').textContent = isPlaying ? '⏸ Pause' : '▶ Play';
+    }
+
+    function seekTo(t) {
+      currentTime = Math.max(0, Math.min(project.duration, t));
+      if (audioElement) audioElement.currentTime = currentTime;
+    }
+
+    function toggleMetronome() {
+      metronomeEnabled = !metronomeEnabled;
+      const btn = document.getElementById('btnMetronome');
+      btn.textContent = `🔔 Metrônomo: ${metronomeEnabled ? 'ON' : 'OFF'}`;
+      btn.classList.toggle('btn-amber', metronomeEnabled);
+    }
+
+    function updateBpm(val) {
+      project.bpm = Math.max(40, Math.min(240, Number(val) || 120));
+    }
+
+    function updateDuration(val) {
+      project.duration = Math.max(8, Math.min(600, Number(val) || 32));
+    }
+
+    function updatePlaybackSpeed(val) {
+      playbackSpeed = Number(val) || 1.0;
+      if (audioElement) audioElement.playbackRate = playbackSpeed;
+    }
+
+    async function handleAudioUpload(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      document.getElementById('audioFileName').textContent = file.name;
+      if (audioObjectUrl) URL.revokeObjectURL(audioObjectUrl);
+      audioObjectUrl = URL.createObjectURL(file);
+      audioElement = new Audio(audioObjectUrl);
+
+      ensureAudioCtx();
+      if (audioCtx) {
+        const arr = await file.arrayBuffer();
+        audioBuffer = await audioCtx.decodeAudioData(arr);
+        project.duration = Math.ceil(audioBuffer.duration);
+        document.getElementById('durationInput').value = project.duration;
+
+        // Compute 240 waveform peaks
+        const raw = audioBuffer.getChannelData(0);
+        const bins = 240;
+        const step = Math.floor(raw.length / bins);
+        waveformPeaks = [];
+        for (let i = 0; i < bins; i++) {
+          let max = 0;
+          for (let j = 0; j < step; j += 12) {
+            const v = Math.abs(raw[i * step + j] || 0);
+            if (v > max) max = v;
+          }
+          waveformPeaks.push(max);
+        }
+      }
+    }
+
+    function exportProjectJson() {
+      const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `stagetap-cue-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+    }
+
+    function importProjectJson(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(reader.result);
+          if (parsed && Array.isArray(parsed.dancers) && Array.isArray(parsed.cues)) {
+            project = parsed;
+            activeCueIndex = 0;
+            selectedDancerId = project.dancers[0].id;
+            if (viewMode === '3d') rebuild3DDancers();
+            syncAllUI();
+          }
+        } catch (err) {}
+      };
+      reader.readAsText(file);
+    }
+
+    function toggleTheme() {
+      document.documentElement.classList.toggle('light');
+    }
+
+    function syncAllUI() {
+      renderDancerList();
+      renderCueList();
+      syncDancerInspector();
+      syncCueInspector();
+    }
+
+    function updateHUD() {
+      const beatSec = getBeatDuration();
+      const totalBeats = Math.floor(currentTime / beatSec);
+      const eightNum = Math.floor(totalBeats / 8) + 1;
+      const beatInEight = (totalBeats % 8) + 1;
+
+      document.getElementById('hudEightText').textContent = `Oito ${eightNum} • Tempo ${beatInEight}`;
+      const leds = document.getElementById('eightLeds').children;
+      for (let i = 0; i < 8; i++) {
+        leds[i].className = 'beat-led' + ((i + 1 === beatInEight) ? (beatInEight === 1 ? ' active-one' : ' active') : '');
+      }
+
+      const st = getStageStateAtTime(currentTime);
+      const badge = document.getElementById('hudStateBadge');
+      if (st.inTransition) {
+        badge.textContent = `🟠 EM TRANSIÇÃO (${Math.round(st.progress * 100)}%)`;
+        badge.style.color = '#fbbf24';
+      } else {
+        badge.textContent = '🟢 EM FORMAÇÃO (HOLD)';
+        badge.style.color = '#10b981';
+      }
+
+      const activeCue = isPlaying ? st.cue : (project.cues[activeCueIndex] || st.cue);
+      if (activeCue) {
+        document.getElementById('bannerCueName').textContent = activeCue.name;
+        document.getElementById('bannerStepText').textContent = `👞 ${activeCue.step || 'Marcação de Palco'}`;
+      }
+
+      const fmt = (s) => {
+        const m = Math.floor(s / 60);
+        const sec = (s % 60).toFixed(1).padStart(4, '0');
+        return `${String(m).padStart(2, '0')}:${sec}`;
+      };
+      document.getElementById('timeReadout').textContent = `${fmt(currentTime)} / ${fmt(project.duration)}`;
+    }
+
+    function mainLoop(ts) {
+      if (isPlaying) {
+        const dt = ((ts - lastFrameTs) / 1000) * playbackSpeed;
+        lastFrameTs = ts;
+        if (audioElement && !audioElement.paused) {
+          currentTime = audioElement.currentTime;
+        } else {
+          currentTime += dt;
+        }
+
+        const beatSec = getBeatDuration();
+        const curBeat = Math.floor(currentTime / beatSec);
+        if (curBeat !== lastBeatPlayed) {
+          lastBeatPlayed = curBeat;
+          playTapClick((curBeat % 8) + 1);
+        }
+
+        if (currentTime >= project.duration) {
+          currentTime = 0;
+          if (audioElement) audioElement.currentTime = 0;
+        }
+      } else {
+        lastFrameTs = ts;
+      }
+
+      updateHUD();
+      if (viewMode === '2d') drawStage2D();
+      else updateAndRender3D();
+      drawTimeline();
+      requestAnimationFrame(mainLoop);
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+      if (e.code === 'Space') {
+        e.preventDefault();
+        togglePlay();
+      }
+    });
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+
+    loadDemoChoreography();
+    requestAnimationFrame(mainLoop);
+  </script>
+</body>
+</html>
