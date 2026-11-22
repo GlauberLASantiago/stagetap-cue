@@ -622,7 +622,8 @@
 
         <div class="hud-card">
           <span id="hudStateBadge" style="font-size:0.76rem;font-weight:800;color:#10b981;">● EM FORMAÇÃO (HOLD)</span>
-          <span style="font-size:0.72rem;color:#94a3b8;">| Dica: arraste o dançarino, o anel de direção ou a bolinha ◆ da curva</span>
+          <button type="button" id="btnAntiCollision" class="chip active" style="pointer-events:auto;" onclick="toggleAntiCollision()" title="Impede que dançarinos se sobreponham ou esbarrem">🛡️ Anti-Esbarrão: ON</button>
+          <button type="button" class="chip" style="pointer-events:auto;" onclick="autoCurveAllTransitions(true)" title="Ajusta automaticamente as curvas Bézier para desviar cruzamentos">✨ Auto-Curvar Desvios</button>
         </div>
       </div>
 
@@ -907,12 +908,128 @@
       currentTime = 4.0;
       document.getElementById('bpmInput').value = project.bpm;
       document.getElementById('durationInput').value = project.duration;
+      autoCurveAllTransitions(false);
       syncAllUI();
     }
 
     // =========================================================================
-    // 3. INTERPOLAÇÃO HÍBRIDA (HOLD -> START MOVE -> ARRIVE + OFFSET + BÉZIER)
+    // 3. INTERPOLAÇÃO HÍBRIDA + SISTEMA ANTI-ESBARRÃO (COLISÃO & ESPAÇO PESSOAL)
     // =========================================================================
+    const MIN_DANCER_DIST = 0.24; // Diâmetro mínimo de segurança entre 2 sapateadores no palco
+    let antiCollisionEnabled = true;
+
+    function toggleAntiCollision() {
+      antiCollisionEnabled = !antiCollisionEnabled;
+      const btn = document.getElementById('btnAntiCollision');
+      if (btn) {
+        btn.textContent = `🛡️ Anti-Esbarrão: ${antiCollisionEnabled ? 'ON' : 'OFF'}`;
+        btn.classList.toggle('active', antiCollisionEnabled);
+      }
+    }
+
+    // Garante que em uma formação estática nenhum dançarino fique sobreposto a outro
+    function enforceFormationSeparation(positionsMap, pinnedId = null) {
+      if (!antiCollisionEnabled || !positionsMap) return;
+      const ids = project.dancers.map((d) => d.id).filter((id) => positionsMap[id]);
+      for (let iter = 0; iter < 5; iter++) {
+        for (let i = 0; i < ids.length; i++) {
+          for (let j = i + 1; j < ids.length; j++) {
+            const idA = ids[i], idB = ids[j];
+            const pA = positionsMap[idA], pB = positionsMap[idB];
+            let dx = pB.x - pA.x;
+            let dz = pB.z - pA.z;
+            let dist = Math.hypot(dx, dz);
+            if (dist < MIN_DANCER_DIST) {
+              if (dist < 0.001) {
+                const ang = (i + 1) * 1.1;
+                dx = Math.cos(ang) * 0.01;
+                dz = Math.sin(ang) * 0.01;
+                dist = 0.01;
+              }
+              const overlap = MIN_DANCER_DIST - dist;
+              const nx = dx / dist;
+              const nz = dz / dist;
+              if (pinnedId === idA) {
+                pB.x = Math.max(-1.35, Math.min(1.35, pB.x + nx * overlap));
+                pB.z = Math.max(-0.92, Math.min(0.92, pB.z + nz * overlap));
+              } else if (pinnedId === idB) {
+                pA.x = Math.max(-1.35, Math.min(1.35, pA.x - nx * overlap));
+                pA.z = Math.max(-0.92, Math.min(0.92, pA.z - nz * overlap));
+              } else {
+                pA.x = Math.max(-1.35, Math.min(1.35, pA.x - nx * overlap * 0.5));
+                pA.z = Math.max(-0.92, Math.min(0.92, pA.z - nz * overlap * 0.5));
+                pB.x = Math.max(-1.35, Math.min(1.35, pB.x + nx * overlap * 0.5));
+                pB.z = Math.max(-0.92, Math.min(0.92, pB.z + nz * overlap * 0.5));
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Calcula automaticamente curvas Bézier de desvio para que trajetórias que se cruzam não esbarrem
+    function autoCurveAllTransitions(resetExisting = false) {
+      for (let cIdx = 1; cIdx < project.cues.length; cIdx++) {
+        const prevCue = project.cues[cIdx - 1];
+        const currCue = project.cues[cIdx];
+        enforceFormationSeparation(prevCue.positions);
+        enforceFormationSeparation(currCue.positions);
+
+        const ids = project.dancers.map((d) => d.id);
+        ids.forEach((id) => {
+          const p0 = prevCue.positions[id];
+          const p2 = currCue.positions[id];
+          if (!p0 || !p2) return;
+          if (resetExisting || (p2.ctrlX === 0 && p2.ctrlZ === 0) || p2.ctrlX === undefined) {
+            p2.ctrlX = (p0.x + p2.x) / 2;
+            p2.ctrlZ = (p0.z + p2.z) / 2;
+          }
+        });
+
+        // Simula a transição em 15 fatias de tempo e afasta os pontos de controle Bézier se houver aproximação < MIN_DANCER_DIST
+        for (let pass = 0; pass < 10; pass++) {
+          for (let step = 2; step <= 13; step++) {
+            const u = step / 15;
+            for (let i = 0; i < ids.length; i++) {
+              for (let j = i + 1; j < ids.length; j++) {
+                const idA = ids[i], idB = ids[j];
+                const p0A = prevCue.positions[idA], p2A = currCue.positions[idA];
+                const p0B = prevCue.positions[idB], p2B = currCue.positions[idB];
+                if (!p0A || !p2A || !p0B || !p2B) continue;
+
+                const xA = quadBezier(p0A.x, p2A.ctrlX, p2A.x, u);
+                const zA = quadBezier(p0A.z, p2A.ctrlZ, p2A.z, u);
+                const xB = quadBezier(p0B.x, p2B.ctrlX, p2B.x, u);
+                const zB = quadBezier(p0B.z, p2B.ctrlZ, p2B.z, u);
+
+                let dx = xB - xA;
+                let dz = zB - zA;
+                let dist = Math.hypot(dx, dz);
+                const safeDist = MIN_DANCER_DIST * 1.12;
+                if (dist < safeDist) {
+                  if (dist < 0.005) {
+                    // Cruzamento frontal exato: desvia perpendicularmente pela direita de cada um
+                    const vx = (p2A.x - p0A.x) || 0.1;
+                    const vz = (p2A.z - p0A.z) || 0.1;
+                    dx = -vz;
+                    dz = vx;
+                    dist = Math.hypot(dx, dz) || 0.01;
+                  }
+                  const push = (safeDist - dist) * 0.85;
+                  const nx = dx / dist;
+                  const nz = dz / dist;
+                  p2A.ctrlX = Math.max(-1.32, Math.min(1.32, p2A.ctrlX - nx * push));
+                  p2A.ctrlZ = Math.max(-0.88, Math.min(0.88, p2A.ctrlZ - nz * push));
+                  p2B.ctrlX = Math.max(-1.32, Math.min(1.32, p2B.ctrlX + nx * push));
+                  p2B.ctrlZ = Math.max(-0.88, Math.min(0.88, p2B.ctrlZ + nz * push));
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
     function getBeatDuration() {
       return 60 / Math.max(40, project.bpm || 120);
     }
@@ -929,7 +1046,7 @@
 
     function getStageStateAtTime(t) {
       const cues = project.cues;
-      if (!cues.length) return { cueIndex: 0, inTransition: false, progress: 1, positions: {}, cue: null };
+      if (!cues.length) return { cueIndex: 0, inTransition: false, progress: 1, positions: {}, cue: null, collidingIds: new Set() };
 
       // Find which cue interval we are in
       let idx = 0;
@@ -985,10 +1102,57 @@
             angle,
             step: pCurr.step || '',
             moving: true,
-            t: easeT
+            t: easeT,
+            vx: pCurr.x - pPrev.x,
+            vz: pCurr.z - pPrev.z
           };
         }
       });
+
+      // Detecção e resolução em tempo real de esbarrões / espaço pessoal durante a transição
+      const collidingIds = new Set();
+      const ids = project.dancers.map((d) => d.id);
+      for (let iter = 0; iter < 5; iter++) {
+        for (let i = 0; i < ids.length; i++) {
+          for (let j = i + 1; j < ids.length; j++) {
+            const idA = ids[i], idB = ids[j];
+            const pA = outPositions[idA], pB = outPositions[idB];
+            if (!pA || !pB) continue;
+            let dx = pB.x - pA.x;
+            let dz = pB.z - pA.z;
+            let dist = Math.hypot(dx, dz);
+            if (dist < MIN_DANCER_DIST) {
+              if (iter === 0 && dist < MIN_DANCER_DIST * 0.92) {
+                collidingIds.add(idA);
+                collidingIds.add(idB);
+              }
+              if (!antiCollisionEnabled) continue;
+              if (dist < 0.003) {
+                const vx = (pA.vx || 0.1);
+                const vz = (pA.vz || 0.1);
+                dx = -vz;
+                dz = vx;
+                dist = Math.hypot(dx, dz) || 0.01;
+              }
+              const overlap = MIN_DANCER_DIST - dist;
+              const nx = dx / dist;
+              const nz = dz / dist;
+              if (pA.moving && !pB.moving) {
+                pA.x -= nx * overlap;
+                pA.z -= nz * overlap;
+              } else if (!pA.moving && pB.moving) {
+                pB.x += nx * overlap;
+                pB.z += nz * overlap;
+              } else {
+                pA.x -= nx * overlap * 0.5;
+                pA.z -= nz * overlap * 0.5;
+                pB.x += nx * overlap * 0.5;
+                pB.z += nz * overlap * 0.5;
+              }
+            }
+          }
+        }
+      }
 
       return {
         cueIndex: idx,
@@ -996,7 +1160,8 @@
         cue: currCue,
         inTransition: anyInTransition,
         progress: avgProgress,
-        positions: outPositions
+        positions: outPositions,
+        collidingIds
       };
     }
 
@@ -1357,6 +1522,10 @@
       if (dragMode2D === 'dancer') {
         pos.x = Math.round(tf.toStageX(mx) * 100) / 100;
         pos.z = Math.round(tf.toStageZ(my) * 100) / 100;
+        enforceFormationSeparation(editCue.positions, dragDancerId);
+        pos.x = Math.round(pos.x * 100) / 100;
+        pos.z = Math.round(pos.z * 100) / 100;
+        autoCurveAllTransitions(false);
       } else if (dragMode2D === 'rotate') {
         const px = tf.toScreenX(pos.x);
         const py = tf.toScreenY(pos.z);
