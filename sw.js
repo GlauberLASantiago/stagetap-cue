@@ -1,4 +1,4 @@
-const CACHE_NAME = 'stagetap-cue-v19';
+const CACHE_NAME = 'stagetap-cue-v20';
 const APP_SHELL = [
   './',
   './index.html',
@@ -9,7 +9,8 @@ const APP_SHELL = [
   './icons/icon-512.png',
   './icons/icon-maskable-192.png',
   './icons/icon-maskable-512.png',
-  './icons/og-cover.jpg'
+  './icons/og-cover.jpg',
+  './icons/og-cover-v2.jpg'
 ];
 
 self.addEventListener('install', (e) => {
