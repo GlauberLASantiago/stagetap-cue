@@ -1302,12 +1302,12 @@
 
         <div class="shortcut-group">
           <h4>🎬 Marcas (Cues) &amp; Andamento</h4>
-          <div class="shortcut-row"><span><strong>Ajustar Oito + Marca Seguinte (BPM Automático)</strong></span><span><kbd class="kbd">A</kbd></span></div>
+          <div class="shortcut-row"><span><strong>Marcar Chegada na Formação (c/ Transição Antes)</strong></span><span><kbd class="kbd">A</kbd></span></div>
           <div class="shortcut-row"><span>Ir para Marca Anterior / Seguinte</span><span><kbd class="kbd">[</kbd> / <kbd class="kbd">]</kbd></span></div>
           <div class="shortcut-row"><span>Criar Nova Marca (+ Cue) Agora</span><span><kbd class="kbd">N</kbd></span></div>
           <div class="shortcut-row"><span>Marcar Início da Transição (◆ Start)</span><span><kbd class="kbd">S</kbd></span></div>
           <div class="shortcut-row"><span>Marcar Chegada na Pose (■ Arrive)</span><span><kbd class="kbd">E</kbd></span></div>
-          <div class="shortcut-row"><span>Marcar Apenas Fim do Oito Atual</span><span><kbd class="kbd">O</kbd></span></div>
+          <div class="shortcut-row"><span>Calibrar Fim do Oito Musical (BPM Variável)</span><span><kbd class="kbd">O</kbd></span></div>
           <div class="shortcut-row"><span>Tap Tempo (Bater Andamento)</span><span><kbd class="kbd">T</kbd></span></div>
         </div>
 
@@ -3721,15 +3721,7 @@
       } else if (tlDragType === 'cueStart' && tlDragCueIndex > 0) {
         const cue = project.cues[tlDragCueIndex];
         const prevCue = project.cues[tlDragCueIndex - 1];
-        const prevDur = Math.max(0.4, cue.arriveTime - cue.startTime);
-        cue.startTime = Math.max(prevCue.arriveTime, t);
-        if (cue.arriveTime < cue.startTime + 0.2) {
-          cue.arriveTime = Math.min(project.duration, Math.round((cue.startTime + prevDur) * 1000) / 1000);
-        }
-        // Mantém o Início do Oito e o BPM ajustados conforme a marca (a menos que segure Alt para mover só a marca)
-        if (!e.altKey) {
-          setEightEndTime(tlDragCueIndex, cue.startTime, false);
-        }
+        cue.startTime = Math.max(prevCue.arriveTime, Math.min(cue.arriveTime, t));
         syncCueInspector();
         renderCueList();
       } else if (tlDragType === 'cueArrive' && tlDragCueIndex >= 0) {
@@ -4392,79 +4384,76 @@
     function updateStampNextButtonLabel() {
       const btn = document.getElementById('btnStampNextCue');
       const hudBtn = document.getElementById('btnHudStampNext');
-      const nextEightNum = Math.max(2, (liveEightCursor || 1) + 1);
       const hasNext = liveCueCursorIdx >= 1 && liveCueCursorIdx < project.cues.length;
       const txt = hasNext
-        ? `⚡ Oito ${nextEightNum} + Cue ${liveCueCursorIdx + 1} (A)`
-        : `⚡ + Oito ${nextEightNum} / Cue ${project.cues.length + 1} (A)`;
+        ? `⚡ Chegada Cue ${liveCueCursorIdx + 1} (A)`
+        : `⚡ + Nova Marca ${project.cues.length + 1} (A)`;
       if (btn) btn.textContent = txt;
       if (hudBtn) hudBtn.textContent = txt;
     }
 
-    // Ajusta o Início do próximo Oito (recalculando o BPM do Oito que terminou) JUNTO com a Marca (Cue) seguinte no tempo atual (Tecla A)!
-    // Se não houver marca futura, ajusta o Oito e cria uma nova Marca alinhada ao início desse Oito.
+    // Tecla A / Botão: Marca a CHEGADA (■ Arrive / Início da Formação) da próxima Marca no instante atual,
+    // colocando automaticamente um tempo padrão de transição ANTES (4 tempos / ~2s antes, sem invadir a marca anterior).
+    // Não altera o BPM nem os Oitos da música! Se não houver marca seguinte, cria uma nova Marca com chegada em nowT.
     function stampNextCueOrCreate() {
-      // Usa o tempo exato em milissegundos (sem snap na grade antiga) para calibrar o início real do Oito
-      const nowT = Math.max(0.25, Math.round(currentTime * 1000) / 1000);
-      const targetEightToFinish = Math.max(1, liveEightCursor || 1);
-
-      // 1. Ajusta o término do Oito `targetEightToFinish` para `nowT`, fazendo o Início do Oito `(targetEightToFinish + 1)`
-      // cair exatamente em `nowT` e recalculando o andamento (BPM) automaticamente!
-      setEightEndTime(targetEightToFinish, nowT, true);
-
-      // Reconstrói a grade musical já com o novo BPM para alinhar a Marca (Cue) e as marcas futuras aos Oitos
-      const newGrid = buildMusicalGrid();
+      const nowT = quantizeTimelineTime(currentTime);
+      if (nowT >= project.duration - 2) {
+        project.duration = Math.ceil(nowT + 10);
+        const durInp = document.getElementById('durationInput');
+        if (durInp) durInp.value = project.duration;
+      }
       const beatSec = getBeatDuration(nowT);
+      // Transição padrão ANTES da chegada: 4 tempos (~2 segundos a 115 BPM)
+      const defaultLeadSec = beatSec * 4;
 
       if (liveCueCursorIdx >= 1 && liveCueCursorIdx < project.cues.length) {
         const targetCue = project.cues[liveCueCursorIdx];
         const prevCue = project.cues[liveCueCursorIdx - 1];
+        const minStart = prevCue ? prevCue.arriveTime : 0;
+
+        // Se a marca anterior terminava depois de nowT, recua a chegada da marca anterior para abrir espaço
         if (prevCue && prevCue.arriveTime > nowT - 0.1) {
-          prevCue.arriveTime = Math.max(prevCue.startTime, Math.round((nowT - beatSec) * 1000) / 1000);
+          prevCue.arriveTime = Math.max(prevCue.startTime, Math.round((nowT - Math.min(defaultLeadSec, (nowT - prevCue.startTime) * 0.5)) * 1000) / 1000);
         }
 
-        // O início da Marca (◆ Start) fica cravado no início deste novo Oito (nowT)
-        targetCue.startTime = nowT;
-        targetCue.arriveTime = Math.min(project.duration, Math.round((nowT + beatSec * 4) * 1000) / 1000);
+        // Define a Chegada (■ Arrive) exatamente em nowT e o Início da Transição (◆ Start) 4 tempos (~2s) ANTES!
+        const safeMinStart = prevCue ? prevCue.arriveTime : 0;
+        targetCue.arriveTime = nowT;
+        targetCue.startTime = Math.max(safeMinStart, Math.round((nowT - defaultLeadSec) * 1000) / 1000);
 
-        // Reposiciona as marcas futuras (que ainda não foram batidas com 'A') nos inícios dos próximos Oitos
+        // Se houver marcas futuras que ficaram antes de nowT, empurra-as mantendo sua duração de transição
         for (let i = liveCueCursorIdx + 1; i < project.cues.length; i++) {
-          const offsetEights = i - liveCueCursorIdx;
-          const futureEightNum = targetEightToFinish + 1 + offsetEights;
-          const futureBeat = newGrid.beats[(futureEightNum - 1) * 8];
-          const futureStartT = futureBeat
-            ? Math.round(futureBeat.time * 1000) / 1000
-            : Math.round((nowT + offsetEights * 8 * beatSec) * 1000) / 1000;
-          if (futureStartT >= project.duration - 2) {
-            project.duration = Math.ceil(futureStartT + 10);
-            const durInp = document.getElementById('durationInput');
-            if (durInp) durInp.value = project.duration;
+          const prev = project.cues[i - 1];
+          const cur = project.cues[i];
+          const curLead = Math.max(beatSec * 2, cur.arriveTime - cur.startTime || defaultLeadSec);
+          if (cur.startTime < prev.arriveTime) {
+            cur.startTime = Math.round((prev.arriveTime + beatSec * 2) * 1000) / 1000;
+            cur.arriveTime = Math.min(project.duration, Math.round((cur.startTime + curLead) * 1000) / 1000);
           }
-          project.cues[i].startTime = futureStartT;
-          project.cues[i].arriveTime = Math.min(project.duration, Math.round((futureStartT + beatSec * 4) * 1000) / 1000);
         }
 
         activeCueIndex = liveCueCursorIdx;
         liveCueCursorIdx++;
-        liveEightCursor = targetEightToFinish + 1;
-        lastBeatPlayed = targetEightToFinish * 8;
-        playTapClick(1);
         syncAllUI();
       } else {
-        // Não há marca seguinte: cria uma nova Marca cravada no início deste novo Oito (nowT)!
+        // Não há marca seguinte: cria uma nova Marca cuja CHEGADA (■ Arrive) é exatamente agora (nowT)
+        // e cujo Início de Transição (◆ Start) começa 4 tempos (~2s) ANTES!
+        const prevCue = project.cues[project.cues.length - 1];
+        const minStart = prevCue ? prevCue.arriveTime : 0;
+        const startT = Math.max(minStart, Math.round((nowT - defaultLeadSec) * 1000) / 1000);
+        const arriveT = Math.max(startT, nowT);
+
         const st = getStageStateAtTime(nowT);
-        const arriveT = Math.min(project.duration, Math.round((nowT + beatSec * 4) * 1000) / 1000);
         const newPos = {};
         project.dancers.forEach((d) => {
           const cur = st.positions[d.id] || { x: 0, z: 0, angle: 0 };
           newPos[d.id] = { x: cur.x, z: cur.z, angle: cur.angle || 0, ctrlX: 0, ctrlZ: 0, offsetBeats: 0, step: '' };
         });
-        const newEightNum = targetEightToFinish + 1;
         const newCue = {
           id: 'cue_' + Date.now().toString(36),
-          name: `Cue ${project.cues.length + 1} — Oito ${newEightNum}`,
+          name: `Cue ${project.cues.length + 1} — Nova Formação`,
           step: 'Time Step',
-          startTime: nowT,
+          startTime: startT,
           arriveTime: arriveT,
           positions: newPos
         };
@@ -4472,17 +4461,23 @@
         project.cues.sort((a, b) => a.startTime - b.startTime);
         activeCueIndex = project.cues.indexOf(newCue);
         liveCueCursorIdx = project.cues.length;
-        liveEightCursor = targetEightToFinish + 1;
-        lastBeatPlayed = targetEightToFinish * 8;
-        playTapClick(1);
         syncAllUI();
       }
     }
 
     function addCueAtCurrentTime() {
       const st = getStageStateAtTime(currentTime);
-      const startT = quantizeTimelineTime(currentTime);
-      const arriveT = Math.min(project.duration, Math.round((startT + getBeatDuration() * 4) * 1000) / 1000);
+      const arriveT = quantizeTimelineTime(currentTime);
+      const beatSec = getBeatDuration(arriveT);
+      const defaultLeadSec = beatSec * 4;
+      // Encontra a marca imediatamente anterior a arriveT para não sobrepor a transição
+      let minStart = 0;
+      for (let i = 0; i < project.cues.length; i++) {
+        if (project.cues[i].arriveTime <= arriveT) {
+          minStart = Math.max(minStart, project.cues[i].arriveTime);
+        }
+      }
+      const startT = Math.max(minStart, Math.round((arriveT - defaultLeadSec) * 1000) / 1000);
       const newPos = {};
       project.dancers.forEach((d) => {
         const cur = st.positions[d.id] || { x: 0, z: 0, angle: 0 };
@@ -4560,10 +4555,10 @@
         liveCueCursorIdx = 1;
         liveEightCursor = 1;
       } else {
-        // Aponta o cursor de captura para a primeira marca cujo startTime vem depois de currentTime (ou para criar nova)
+        // Aponta o cursor de captura para a primeira marca cuja chegada (arriveTime) vem depois de currentTime (ou para criar nova)
         let nextIdx = project.cues.length;
         for (let i = 1; i < project.cues.length; i++) {
-          if (project.cues[i].startTime >= currentTime - 0.05) {
+          if (project.cues[i].arriveTime >= currentTime - 0.05) {
             nextIdx = i;
             break;
           }
