@@ -653,6 +653,7 @@
 
     <div class="topbar-actions">
       <button type="button" class="btn btn-amber" onclick="loadDemoChoreography()" title="Carregar coreografia exemplo completa">🎬 Demo Shim Sham</button>
+      <button type="button" id="btnExportVideo" class="btn btn-primary" onclick="startVideoExport()" title="Gravar e exportar vídeo MP4/WebM com a visualização atual do palco em Tela Cheia e áudio sincronizado">🎥 Exportar Vídeo</button>
       <button type="button" class="btn" onclick="toggleShortcutsModal()" title="Ver todas as teclas de atalho (Tecla H ou ?)">⌨️ Atalhos</button>
       <button type="button" class="btn" onclick="exportProjectJson()">💾 Exportar</button>
       <button type="button" class="btn" onclick="document.getElementById('importJsonInput').click()">📂 Importar</button>
@@ -895,6 +896,16 @@
 
       <!-- 3D Three.js Container -->
       <div id="container3d" style="display:block;"></div>
+
+      <!-- Barra Flutuante de Exportação de Vídeo em Tela Cheia -->
+      <div id="videoExportFloatingBar" style="display:none;position:fixed;bottom:18px;right:18px;z-index:9998;background:rgba(15,29,35,0.96);border:2px solid #ef4444;border-radius:12px;padding:10px 14px;box-shadow:0 16px 40px rgba(0,0,0,0.75);align-items:center;gap:12px;pointer-events:auto;">
+        <span style="display:inline-flex;align-items:center;gap:7px;font-size:0.78rem;font-weight:800;color:#fca5a5;">
+          <span style="width:10px;height:10px;border-radius:50%;background:#ef4444;display:inline-block;box-shadow:0 0 10px #ef4444;"></span>
+          <span id="videoExportStatusText">Gravando Vídeo (0%)...</span>
+        </span>
+        <button type="button" class="btn btn-amber" style="padding:4px 10px;font-size:0.72rem;" onclick="stopVideoExport(true)" title="Parar agora e baixar o vídeo gravado até aqui">⏹ Finalizar e Salvar</button>
+        <button type="button" class="btn" style="padding:4px 8px;font-size:0.72rem;color:#f87171;" onclick="stopVideoExport(false)" title="Cancelar gravação">✕ Cancelar</button>
+      </div>
 
       <!-- Barra Flutuante de Edição Direta no Palco 3D (aparece ao dar duplo clique em um dançarino no 3D) -->
       <div id="edit3dFloatingBar" style="display:none;position:absolute;top:62px;left:50%;transform:translateX(-50%);z-index:30;background:rgba(15,29,35,0.94);border:1.5px solid var(--accent-amber);border-radius:12px;padding:7px 14px;box-shadow:0 12px 32px rgba(0,0,0,0.65);align-items:center;gap:10px;flex-wrap:wrap;pointer-events:auto;">
@@ -1385,6 +1396,17 @@
     let audioObjectUrl = null;
     let waveformPeaks = [];
 
+    // Estado de Exportação de Vídeo (Tela Cheia da Visualização Atual)
+    let isExportingVideo = false;
+    let cancelVideoExportFlag = false;
+    let wasStageMaximizedBeforeExport = false;
+    let videoExportCanvas = null;
+    let videoExportCtx = null;
+    let videoMediaRecorder = null;
+    let videoRecordedChunks = [];
+    let videoExportAudioDest = null;
+    let videoExportBufferSource = null;
+
     function ensureAudioCtx() {
       if (!audioCtx) {
         const AC = window.AudioContext || window.webkitAudioContext;
@@ -1425,6 +1447,9 @@
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.065);
       osc.connect(gain);
       gain.connect(audioCtx.destination);
+      if (isExportingVideo && videoExportAudioDest) {
+        gain.connect(videoExportAudioDest);
+      }
       osc.start(now);
       osc.stop(now + 0.07);
     }
@@ -2908,7 +2933,7 @@
       camera3d = new THREE.PerspectiveCamera(45, container.clientWidth / Math.max(1, container.clientHeight), 0.1, 120);
       camera3d.position.set(0, 7.5, 13.5);
 
-      renderer3d = new THREE.WebGLRenderer({ antialias: true });
+      renderer3d = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
       renderer3d.setSize(container.clientWidth, container.clientHeight);
       renderer3d.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       container.innerHTML = '';
@@ -5032,6 +5057,275 @@
       await decodeArrayBufferToWaveform(arr, true, true);
     }
 
+    // =========================================================================
+    // 9. EXPORTAÇÃO DE VÍDEO EM TELA CHEIA (COM A VISUALIZAÇÃO ATUAL 2D OU 3D)
+    // =========================================================================
+    function getSupportedVideoMimeType() {
+      const candidates = [
+        'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+        'video/mp4',
+        'video/webm;codecs=vp9,opus',
+        'video/webm;codecs=vp8,opus',
+        'video/webm'
+      ];
+      for (const mime of candidates) {
+        if (window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(mime)) {
+          return mime;
+        }
+      }
+      return '';
+    }
+
+    function startVideoExport() {
+      if (isExportingVideo) {
+        stopVideoExport(true);
+        return;
+      }
+      ensureAudioCtx();
+      setEditing3DDancer(null);
+
+      // Pausa qualquer reprodução anterior e posiciona no início (00:00.000)
+      if (isPlaying) togglePlay();
+      seekTo(0);
+
+      // Coloca o palco em modo Tela Cheia (stage-maximized) para exportar exatamente a visualização atual em tela cheia
+      wasStageMaximizedBeforeExport = document.body.classList.contains('stage-maximized');
+      document.body.classList.add('stage-maximized');
+
+      // Força atualização das dimensões do canvas 2D ou 3D para a tela cheia
+      if (viewMode === '2d') drawStage2D();
+      else updateAndRender3D();
+
+      const srcCanvas = viewMode === '2d' ? canvas2d : (renderer3d ? renderer3d.domElement : canvas2d);
+      const targetW = Math.max(1280, Math.min(1920, srcCanvas.width || 1280));
+      const aspect = (srcCanvas.width && srcCanvas.height) ? (srcCanvas.width / srcCanvas.height) : (16 / 9);
+      const targetH = Math.round(targetW / aspect / 2) * 2;
+
+      videoExportCanvas = document.createElement('canvas');
+      videoExportCanvas.width = targetW;
+      videoExportCanvas.height = targetH;
+      videoExportCtx = videoExportCanvas.getContext('2d');
+
+      const canvasStream = videoExportCanvas.captureStream(30);
+      const combinedTracks = [...canvasStream.getVideoTracks()];
+
+      // Configura captura do áudio (música + metrônomo se ligado) via Web Audio API
+      if (audioCtx) {
+        videoExportAudioDest = audioCtx.createMediaStreamDestination();
+        if (audioBuffer && audioVolume > 0.001) {
+          try {
+            videoExportBufferSource = audioCtx.createBufferSource();
+            videoExportBufferSource.buffer = audioBuffer;
+            videoExportBufferSource.playbackRate.value = playbackSpeed;
+            const musicGain = audioCtx.createGain();
+            musicGain.gain.value = audioVolume;
+            videoExportBufferSource.connect(musicGain);
+            musicGain.connect(videoExportAudioDest);
+
+            const offsetSec = Number(project.audioOffset || 0);
+            if (offsetSec >= 0) {
+              videoExportBufferSource.start(audioCtx.currentTime, offsetSec);
+            } else {
+              videoExportBufferSource.start(audioCtx.currentTime - offsetSec, 0);
+            }
+          } catch (e) {}
+        }
+        const audioTracks = videoExportAudioDest.stream.getAudioTracks();
+        if (audioTracks.length > 0) {
+          combinedTracks.push(audioTracks[0]);
+        }
+      }
+
+      const finalStream = new MediaStream(combinedTracks);
+      const mimeType = getSupportedVideoMimeType();
+      const recOptions = mimeType ? { mimeType, videoBitsPerSecond: 6000000 } : { videoBitsPerSecond: 6000000 };
+
+      videoRecordedChunks = [];
+      cancelVideoExportFlag = false;
+      isExportingVideo = true;
+
+      try {
+        videoMediaRecorder = new MediaRecorder(finalStream, recOptions);
+      } catch (err) {
+        videoMediaRecorder = new MediaRecorder(finalStream);
+      }
+
+      videoMediaRecorder.ondataavailable = (ev) => {
+        if (ev.data && ev.data.size > 0) {
+          videoRecordedChunks.push(ev.data);
+        }
+      };
+
+      videoMediaRecorder.onstop = () => {
+        if (videoExportBufferSource) {
+          try { videoExportBufferSource.stop(); } catch (e) {}
+          videoExportBufferSource = null;
+        }
+        videoExportAudioDest = null;
+
+        if (!wasStageMaximizedBeforeExport) {
+          document.body.classList.remove('stage-maximized');
+        }
+        const floatBar = document.getElementById('videoExportFloatingBar');
+        if (floatBar) floatBar.style.display = 'none';
+        const topBtn = document.getElementById('btnExportVideo');
+        if (topBtn) topBtn.textContent = '🎥 Exportar Vídeo';
+
+        setTimeout(() => {
+          if (viewMode === '2d') drawStage2D();
+          else updateAndRender3D();
+        }, 60);
+
+        if (!cancelVideoExportFlag && videoRecordedChunks.length > 0) {
+          const actualMime = (videoMediaRecorder && videoMediaRecorder.mimeType) || mimeType || 'video/webm';
+          const ext = actualMime.includes('mp4') ? 'mp4' : 'webm';
+          const blob = new Blob(videoRecordedChunks, { type: actualMime });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `stagetap-cue-${viewMode}-${new Date().toISOString().slice(0, 10)}.${ext}`;
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(url), 15000);
+        }
+      };
+
+      const floatBar = document.getElementById('videoExportFloatingBar');
+      if (floatBar) floatBar.style.display = 'flex';
+      const topBtn = document.getElementById('btnExportVideo');
+      if (topBtn) topBtn.textContent = '🔴 Gravando...';
+
+      renderVideoExportFrame();
+      videoMediaRecorder.start(200);
+      if (!isPlaying) togglePlay();
+    }
+
+    function stopVideoExport(saveFile = true) {
+      if (!isExportingVideo) return;
+      isExportingVideo = false;
+      cancelVideoExportFlag = !saveFile;
+      if (isPlaying) togglePlay();
+      if (videoMediaRecorder && videoMediaRecorder.state !== 'inactive') {
+        try { videoMediaRecorder.stop(); } catch (e) {}
+      }
+    }
+
+    function renderVideoExportFrame() {
+      if (!isExportingVideo || !videoExportCtx || !videoExportCanvas) return;
+      const g = videoExportCtx;
+      const w = videoExportCanvas.width;
+      const h = videoExportCanvas.height;
+
+      // 1. Fundo e imagem da visualização atual do palco (3D ou 2D) em tela cheia
+      g.fillStyle = '#0f1d23';
+      g.fillRect(0, 0, w, h);
+      const srcCanvas = viewMode === '2d' ? canvas2d : (renderer3d ? renderer3d.domElement : canvas2d);
+      if (srcCanvas && srcCanvas.width > 0 && srcCanvas.height > 0) {
+        g.drawImage(srcCanvas, 0, 0, w, h);
+      }
+
+      // 2. Desenha o HUD superior esquerdo (Contagem de Sapateado + 8 LEDs) no vídeo
+      const info = getMusicalInfoAtTime(currentTime);
+      const bpmDisp = Number(info.bpm).toFixed(1).replace(/\.0$/, '');
+      g.save();
+      g.fillStyle = 'rgba(15, 29, 35, 0.86)';
+      g.strokeStyle = 'rgba(233, 196, 106, 0.45)';
+      g.lineWidth = 2;
+      g.beginPath();
+      g.roundRect(22, 18, 495, 58, 12);
+      g.fill();
+      g.stroke();
+
+      g.fillStyle = '#94a3b8';
+      g.font = '700 11px Inter, sans-serif';
+      g.fillText('CONTAGEM DE SAPATEADO (OITOS)', 36, 37);
+
+      g.fillStyle = '#fbbf24';
+      g.font = '800 15px Epilogue, sans-serif';
+      g.fillText(`Oito ${info.eightNum} • Tempo ${info.beatInEight}  |  Comp. ${info.bar} (${info.num}/${info.den} • ${bpmDisp} BPM)`, 36, 60);
+
+      for (let i = 1; i <= 8; i++) {
+        const lx = 335 + (i - 1) * 21;
+        const ly = 34;
+        const isOne = (i === 1 && info.beatInEight === 1);
+        const isAct = (i === info.beatInEight);
+        g.fillStyle = isOne ? '#E76F51' : (isAct ? '#E9C46A' : 'rgba(38, 70, 83, 0.85)');
+        g.beginPath();
+        g.roundRect(lx, ly, 18, 26, 5);
+        g.fill();
+        g.fillStyle = (isOne || isAct) ? '#0f1d23' : '#94a3b8';
+        g.font = '800 12px Inter, sans-serif';
+        g.textAlign = 'center';
+        g.fillText(String(i), lx + 9, ly + 17);
+      }
+      g.restore();
+
+      // 3. Desenha o HUD superior direito (Status / Visão + Tempo)
+      const st = getStageStateAtTime(currentTime);
+      const fmt = (s) => {
+        const m = Math.floor(s / 60);
+        const sec = (s % 60).toFixed(2).padStart(5, '0');
+        return `${String(m).padStart(2, '0')}:${sec}`;
+      };
+      let statusTxt = st.inTransition ? `🟠 EM TRANSIÇÃO (${Math.round(st.progress * 100)}%)` : '🟢 EM FORMAÇÃO (HOLD)';
+      let statusCol = st.inTransition ? '#fbbf24' : '#10b981';
+      if (viewMode === '3d' && active3DCamPreset === 'pov') {
+        const povDancer = project.dancers.find((d) => d.id === povDancerId) || project.dancers[0];
+        statusTxt = `👀 OLHOS DE: ${povDancer ? povDancer.name : 'A'}`;
+        statusCol = '#38bdf8';
+      }
+
+      g.save();
+      const rightCardW = 355;
+      g.fillStyle = 'rgba(15, 29, 35, 0.86)';
+      g.strokeStyle = 'rgba(233, 196, 106, 0.45)';
+      g.lineWidth = 2;
+      g.beginPath();
+      g.roundRect(w - rightCardW - 22, 18, rightCardW, 50, 12);
+      g.fill();
+      g.stroke();
+
+      g.fillStyle = statusCol;
+      g.font = '800 13px Inter, sans-serif';
+      g.fillText(statusTxt, w - rightCardW - 6, 48);
+
+      g.fillStyle = '#e2e8f0';
+      g.font = '700 13px Inter, sans-serif';
+      g.textAlign = 'right';
+      g.fillText(`${fmt(currentTime)} / ${fmt(project.duration)}`, w - 36, 48);
+      g.restore();
+
+      // 4. Desenha a legenda inferior central (Cue Atual + Passo de Sapateado)
+      const activeCue = st.cue || project.cues[activeCueIndex];
+      if (activeCue) {
+        const bannerTxt = `${activeCue.name}   •   👞 ${activeCue.step || 'Marcação de Palco'}`;
+        g.save();
+        g.font = '800 16px Epilogue, sans-serif';
+        const bw = Math.min(w - 60, Math.max(380, g.measureText(bannerTxt).width + 52));
+        const bx = (w - bw) / 2;
+        const by = h - 64;
+        g.fillStyle = 'rgba(15, 29, 35, 0.90)';
+        g.strokeStyle = '#E9C46A';
+        g.lineWidth = 2;
+        g.beginPath();
+        g.roundRect(bx, by, bw, 44, 22);
+        g.fill();
+        g.stroke();
+
+        g.fillStyle = '#F8F9FA';
+        g.textAlign = 'center';
+        g.textBaseline = 'middle';
+        g.fillText(bannerTxt, w / 2, by + 22);
+        g.restore();
+      }
+
+      // Atualiza o progresso na barra flutuante da tela
+      const pct = Math.min(100, Math.round((currentTime / Math.max(1, project.duration)) * 100));
+      const stEl = document.getElementById('videoExportStatusText');
+      if (stEl) {
+        stEl.textContent = `Exportando Vídeo (${pct}%) — ${fmt(currentTime)} / ${fmt(project.duration)}`;
+      }
+    }
+
     function exportProjectJson() {
       const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
@@ -5150,11 +5444,20 @@
         }
 
         if (currentTime >= project.duration) {
-          currentTime = 0;
-          liveCueCursorIdx = 1;
-          liveEightCursor = 1;
-          updateStampNextButtonLabel();
-          syncAudioElementToTimeline();
+          if (isExportingVideo) {
+            currentTime = project.duration;
+            updateHUD();
+            if (viewMode === '2d') drawStage2D();
+            else updateAndRender3D();
+            renderVideoExportFrame();
+            stopVideoExport(true);
+          } else {
+            currentTime = 0;
+            liveCueCursorIdx = 1;
+            liveEightCursor = 1;
+            updateStampNextButtonLabel();
+            syncAudioElementToTimeline();
+          }
         }
       } else {
         lastFrameTs = ts;
@@ -5163,6 +5466,9 @@
       updateHUD();
       if (viewMode === '2d') drawStage2D();
       else updateAndRender3D();
+      if (isExportingVideo) {
+        renderVideoExportFrame();
+      }
       drawTimeline();
       requestAnimationFrame(mainLoop);
     }
