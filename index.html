@@ -100,64 +100,87 @@
 
     /* TOPBAR */
     .topbar {
-      height: 52px;
+      height: 48px;
       background: var(--bg-panel);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 14px;
-      gap: 10px;
+      padding: 0 10px;
+      gap: 8px;
       flex-shrink: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .topbar::-webkit-scrollbar,
+    .transport-bar::-webkit-scrollbar,
+    .cam-bar::-webkit-scrollbar,
+    .hud-actions-card::-webkit-scrollbar,
+    .inst-footer::-webkit-scrollbar {
+      height: 4px;
+    }
+    .topbar::-webkit-scrollbar-thumb,
+    .transport-bar::-webkit-scrollbar-thumb,
+    .cam-bar::-webkit-scrollbar-thumb,
+    .hud-actions-card::-webkit-scrollbar-thumb {
+      background: rgba(233, 196, 106, 0.35);
+      border-radius: 4px;
     }
     .brand {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
+      flex-shrink: 0;
     }
     .brand-logo {
-      width: 34px;
-      height: 34px;
-      border-radius: 9px;
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
       background: linear-gradient(135deg, #E76F51, #F4A261);
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 900;
       color: #F8F9FA;
-      font-size: 0.95rem;
+      font-size: 0.86rem;
+      flex-shrink: 0;
       box-shadow: 0 4px 12px rgba(231, 111, 81, 0.38);
     }
     .brand-title {
       font-weight: 800;
-      font-size: 1.05rem;
+      font-size: 0.96rem;
       letter-spacing: -0.02em;
+      white-space: nowrap;
     }
     .brand-title span { color: var(--accent); }
     .brand-sub {
-      font-size: 0.72rem;
+      font-size: 0.68rem;
       color: var(--text-muted);
       display: block;
+      white-space: nowrap;
     }
 
     .view-switcher {
       display: flex;
       background: var(--bg-input);
       padding: 3px;
-      border-radius: 10px;
+      border-radius: 9px;
       border: 1px solid var(--border);
-      gap: 4px;
+      gap: 3px;
+      flex-shrink: 0;
     }
     .view-btn {
-      padding: 6px 13px;
-      border-radius: 7px;
+      padding: 5px 10px;
+      border-radius: 6px;
       border: none;
       background: transparent;
       color: var(--text-sub);
-      font-size: 0.8rem;
+      font-size: 0.74rem;
       font-weight: 700;
       cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
       transition: all 0.15s;
     }
     .view-btn.active {
@@ -169,20 +192,23 @@
     .topbar-actions {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
+      flex-shrink: 0;
     }
     .btn {
-      padding: 6px 11px;
+      padding: 5px 9px;
       border-radius: 7px;
       border: 1px solid var(--border);
       background: var(--bg-card);
       color: var(--text-main);
-      font-size: 0.76rem;
+      font-size: 0.73rem;
       font-weight: 600;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 5px;
+      gap: 4px;
+      white-space: nowrap;
+      flex-shrink: 0;
       transition: all 0.15s;
     }
     .btn:hover { border-color: var(--accent); }
@@ -197,13 +223,42 @@
       color: #fbbf24;
       border-color: rgba(245, 158, 11, 0.4);
     }
+    .btn-panel-toggle.active {
+      border-color: var(--accent-amber);
+      color: var(--accent-amber);
+      background: rgba(233, 196, 106, 0.14);
+    }
 
     /* MAIN WORKSPACE */
     .workspace {
       flex: 1;
       display: grid;
-      grid-template-columns: 290px 1fr 320px;
+      grid-template-columns: 270px 1fr 295px;
       min-height: 0;
+      position: relative;
+    }
+    body.left-collapsed .workspace {
+      grid-template-columns: 0px 1fr 295px;
+    }
+    body.right-collapsed .workspace {
+      grid-template-columns: 270px 1fr 0px;
+    }
+    body.left-collapsed.right-collapsed .workspace {
+      grid-template-columns: 0px 1fr 0px;
+    }
+    body.left-collapsed .panel-left {
+      padding: 0;
+      border: none;
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
+    }
+    body.right-collapsed .panel-right {
+      padding: 0;
+      border: none;
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
     }
 
     .panel {
@@ -212,12 +267,32 @@
       display: flex;
       flex-direction: column;
       overflow-y: auto;
-      padding: 12px;
-      gap: 12px;
+      padding: 10px;
+      gap: 10px;
+      min-width: 0;
     }
     .panel-right {
       border-right: none;
       border-left: 1px solid var(--border);
+    }
+    .drawer-mobile-header {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 2px;
+    }
+    .drawer-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(6, 14, 18, 0.62);
+      backdrop-filter: blur(2px);
+      z-index: 390;
+    }
+    .drawer-backdrop.open {
+      display: block;
     }
 
     .section-box {
@@ -305,6 +380,8 @@
       font-size: 0.71rem;
       font-weight: 600;
       cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
     .chip:hover, .chip.active {
       border-color: var(--accent);
@@ -338,46 +415,56 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      min-width: 0;
+      min-height: 0;
     }
     .stage-hud-top {
       position: absolute;
-      top: 10px;
-      left: 12px;
-      right: 12px;
+      top: 6px;
+      left: 8px;
+      right: 8px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       pointer-events: none;
       z-index: 10;
-      gap: 8px;
-      flex-wrap: wrap;
+      gap: 6px;
+      flex-wrap: nowrap;
     }
     .hud-card {
       pointer-events: auto;
-      background: rgba(15, 12, 28, 0.86);
+      background: rgba(15, 12, 28, 0.84);
       backdrop-filter: blur(8px);
       border: 1px solid rgba(255, 255, 255, 0.13);
-      border-radius: 10px;
-      padding: 6px 11px;
+      border-radius: 9px;
+      padding: 4px 8px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 7px;
       color: #f8fafc;
+      min-width: 0;
+    }
+    .hud-actions-card {
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      max-width: 100%;
+      flex-shrink: 1;
     }
     .eight-leds {
       display: flex;
-      gap: 4px;
+      gap: 3px;
+      flex-shrink: 0;
     }
     .beat-led {
-      width: 20px;
-      height: 20px;
-      border-radius: 5px;
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid rgba(255, 255, 255, 0.14);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.72rem;
+      font-size: 0.68rem;
       font-weight: 800;
       color: #94a3b8;
     }
@@ -396,37 +483,45 @@
 
     .stage-hud-bottom {
       position: absolute;
-      bottom: 12px;
-      left: 50%;
-      transform: translateX(-50%);
+      bottom: 6px;
+      left: 8px;
+      right: 8px;
       z-index: 10;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
       pointer-events: none;
     }
     .step-banner {
-      background: rgba(15, 12, 28, 0.92);
+      background: rgba(15, 12, 28, 0.90);
       border: 1px solid var(--border-strong);
-      padding: 7px 16px;
+      padding: 4px 12px;
       border-radius: 999px;
-      font-size: 0.86rem;
+      font-size: 0.76rem;
       font-weight: 800;
       color: #fff;
-      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.55);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .cam-bar {
       pointer-events: auto;
       display: none;
-      background: rgba(15, 12, 28, 0.88);
+      background: rgba(15, 12, 28, 0.86);
       border: 1px solid rgba(255, 255, 255, 0.15);
-      padding: 4px;
-      border-radius: 10px;
+      padding: 3px 5px;
+      border-radius: 9px;
       gap: 4px;
+      max-width: 100%;
+      flex-wrap: nowrap !important;
+      overflow-x: auto;
+      align-items: center;
     }
     .cam-bar.visible { display: flex; }
 
@@ -439,7 +534,7 @@
 
     /* TIMELINE FOOTER */
     .timeline-dock {
-      height: 205px;
+      height: auto;
       background: var(--bg-panel);
       backdrop-filter: blur(12px);
       border-top: 1px solid var(--border);
@@ -448,32 +543,43 @@
       flex-shrink: 0;
     }
     .transport-bar {
-      min-height: 42px;
-      padding: 4px 12px;
+      min-height: 38px;
+      padding: 4px 10px;
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-start;
       gap: 8px;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
+      overflow-x: auto;
     }
     .transport-group {
       display: flex;
       align-items: center;
       gap: 5px;
+      flex-shrink: 0;
+      padding-right: 6px;
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .transport-group:last-child {
+      border-right: none;
+      padding-right: 0;
     }
     .time-readout {
       font-family: monospace;
-      font-size: 0.85rem;
+      font-size: 0.78rem;
       font-weight: 800;
       color: var(--accent-amber);
       background: var(--bg-input);
-      padding: 4px 8px;
+      padding: 3px 7px;
       border-radius: 6px;
       border: 1px solid var(--border);
+      white-space: nowrap;
+      flex-shrink: 0;
     }
     .timeline-canvas-wrap {
-      flex: 1;
+      height: 128px;
+      min-height: 112px;
       position: relative;
       overflow: hidden;
       background: rgba(16, 31, 38, 0.92);
@@ -487,14 +593,16 @@
     .inst-footer {
       background: rgba(15, 29, 35, 0.96);
       border-top: 1px solid var(--border);
-      padding: 4px 14px;
-      font-size: 0.69rem;
+      padding: 3px 10px;
+      font-size: 0.64rem;
       color: var(--text-muted);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 6px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      white-space: nowrap;
+      gap: 10px;
       flex-shrink: 0;
     }
     .inst-footer a {
@@ -542,9 +650,96 @@
       justify-content: space-between;
     }
 
-    @media (max-width: 1100px) {
+    /* RESPONSIVIDADE PARA NOTEBOOKS MENORES, TABLETS E CELULARES */
+    @media (max-width: 1320px) {
+      .brand-sub { display: none; }
       .workspace {
-        grid-template-columns: 240px 1fr 260px;
+        grid-template-columns: 245px 1fr 265px;
+      }
+      body.left-collapsed .workspace { grid-template-columns: 0px 1fr 265px; }
+      body.right-collapsed .workspace { grid-template-columns: 245px 1fr 0px; }
+    }
+
+    /* Em telas <= 1180px (janelas pequenas, tablets e celulares), o Palco ocupa 100% da largura
+       e os painéis laterais funcionam como gavetas deslizantes (drawers) abertas sob demanda! */
+    @media (max-width: 1180px) {
+      .workspace,
+      body.left-collapsed .workspace,
+      body.right-collapsed .workspace,
+      body.left-collapsed.right-collapsed .workspace {
+        grid-template-columns: 1fr !important;
+      }
+      .panel-left,
+      .panel-right {
+        position: fixed !important;
+        top: 48px;
+        bottom: 0;
+        width: min(320px, 88vw);
+        z-index: 410;
+        background: rgba(17, 33, 41, 0.97);
+        backdrop-filter: blur(14px);
+        box-shadow: 0 0 36px rgba(0, 0, 0, 0.72);
+        transition: transform 0.22s ease;
+        padding: 10px !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        border: 1px solid var(--border) !important;
+      }
+      .panel-left {
+        left: 0;
+        transform: translateX(-108%);
+      }
+      .panel-right {
+        right: 0;
+        transform: translateX(108%);
+      }
+      .panel-left.drawer-open,
+      .panel-right.drawer-open {
+        transform: translateX(0) !important;
+      }
+      .drawer-mobile-header {
+        display: flex !important;
+      }
+      .stage-hud-top {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+      }
+      .stage-hud-top .hud-card {
+        justify-content: space-between;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .topbar {
+        height: 44px;
+        padding: 0 6px;
+        gap: 5px;
+      }
+      .brand-title { font-size: 0.85rem; }
+      .brand-logo { width: 26px; height: 26px; font-size: 0.76rem; }
+      .view-btn { padding: 4px 8px; font-size: 0.7rem; }
+      .btn { padding: 4px 7px; font-size: 0.7rem; }
+      .panel-left, .panel-right { top: 44px; }
+      .hud-eight-subtitle { display: none; }
+      .beat-led { width: 16px; height: 16px; font-size: 0.62rem; }
+      .timeline-canvas-wrap {
+        height: 112px;
+        min-height: 104px;
+      }
+      .inst-footer {
+        font-size: 0.58rem;
+        padding: 2px 8px;
+      }
+    }
+
+    @media (max-height: 700px) {
+      .timeline-canvas-wrap {
+        height: 106px;
+        min-height: 98px;
+      }
+      .inst-footer {
+        display: none;
       }
     }
 
@@ -648,27 +843,35 @@
     </div>
 
     <div class="view-switcher">
-      <button type="button" id="btnView2D" class="view-btn" onclick="setViewMode('2d')" title="Atalho: Tecla V">🗺️ Mapa 2D (Ortogonal)</button>
-      <button type="button" id="btnView3D" class="view-btn active" onclick="setViewMode('3d')" title="Atalho: Tecla V">🎥 Palco 3D (Câmeras Móveis)</button>
+      <button type="button" id="btnView2D" class="view-btn" onclick="setViewMode('2d')" title="Atalho: Tecla V">🗺️ 2D</button>
+      <button type="button" id="btnView3D" class="view-btn active" onclick="setViewMode('3d')" title="Atalho: Tecla V">🎥 Palco 3D</button>
     </div>
 
     <div class="topbar-actions">
+      <button type="button" id="btnToggleLeftPanel" class="btn btn-panel-toggle active" onclick="toggleSidePanel('left')" title="Abrir/Recolher Painel de Elenco, Formações e Palco">👯 Elenco &amp; Palco</button>
+      <button type="button" id="btnToggleRightPanel" class="btn btn-panel-toggle active" onclick="toggleSidePanel('right')" title="Abrir/Recolher Painel de Marcas (Cues), Passos e BPM">🎬 Marcas &amp; Passos</button>
       <button type="button" class="btn" style="border-color:var(--accent-cyan);color:var(--accent-cyan);" onclick="openNewProjectModal()" title="Criar uma nova coreografia limpa do zero">✨ Novo</button>
-      <button type="button" class="btn btn-amber" onclick="loadDemoChoreography()" title="Carregar coreografia exemplo completa (40 Oitos / 18 Cues)">🎬 Demo Shim Sham</button>
-      <button type="button" id="btnExportVideo" class="btn btn-primary" onclick="startVideoExport()" title="Gravar e exportar vídeo MP4/WebM com a visualização atual do palco em Tela Cheia e áudio sincronizado">🎥 Exportar Vídeo</button>
+      <button type="button" class="btn btn-amber" onclick="loadDemoChoreography()" title="Carregar coreografia exemplo completa (40 Oitos / 18 Cues)">🎬 Demo</button>
+      <button type="button" id="btnExportVideo" class="btn btn-primary" onclick="startVideoExport()" title="Gravar e exportar vídeo MP4 compatível com WhatsApp em Tela Cheia">🎥 Vídeo MP4</button>
       <button type="button" class="btn" onclick="toggleShortcutsModal()" title="Ver todas as teclas de atalho (Tecla H ou ?)">⌨️ Atalhos</button>
-      <button type="button" class="btn" onclick="exportProjectJson()">💾 Exportar</button>
-      <button type="button" class="btn" onclick="document.getElementById('importJsonInput').click()">📂 Importar</button>
+      <button type="button" class="btn" onclick="exportProjectJson()" title="Exportar projeto JSON">💾 Exportar</button>
+      <button type="button" class="btn" onclick="document.getElementById('importJsonInput').click()" title="Importar projeto JSON">📂 Importar</button>
       <input type="file" id="importJsonInput" accept=".json" hidden onchange="importProjectJson(event)" />
       <button type="button" class="btn" onclick="toggleAppFullscreen()" title="Alternar Tela Cheia do Aplicativo">⛶ Tela Cheia</button>
       <button type="button" class="btn" onclick="toggleTheme()" title="Alternar tema Escuro/Claro">🌓</button>
     </div>
   </header>
 
+  <div id="drawerBackdrop" class="drawer-backdrop" onclick="closeMobileDrawers()"></div>
+
   <!-- MAIN WORKSPACE -->
   <div class="workspace">
     <!-- LEFT PANEL: CAST & DANCER ORIENTATION -->
-    <aside class="panel">
+    <aside id="leftPanel" class="panel panel-left">
+      <div class="drawer-mobile-header">
+        <strong style="font-size:0.84rem;color:var(--accent-amber);">👯 Elenco, Formações &amp; Palco</strong>
+        <button type="button" class="btn" onclick="closeMobileDrawers()">✕ Fechar</button>
+      </div>
       <!-- Cast Manager -->
       <div class="section-box">
         <div class="section-title">
@@ -864,10 +1067,10 @@
     <main class="stage-area">
       <!-- Top HUD: 8-Count LEDs + Transition Status -->
       <div class="stage-hud-top">
-        <div class="hud-card">
-          <div>
-            <div style="font-size:0.66rem;color:#94a3b8;font-weight:700;text-transform:uppercase;">Contagem de Sapateado (Oitos)</div>
-            <div id="hudEightText" style="font-size:0.86rem;font-weight:800;color:#fbbf24;">Oito 1 • Tempo 1</div>
+        <div class="hud-card" style="flex-shrink:0;">
+          <div style="min-width:0;">
+            <div class="hud-eight-subtitle" style="font-size:0.6rem;color:#94a3b8;font-weight:700;text-transform:uppercase;white-space:nowrap;">Contagem de Sapateado (Oitos)</div>
+            <div id="hudEightText" style="font-size:0.78rem;font-weight:800;color:#fbbf24;white-space:nowrap;">Oito 1 • Tempo 1</div>
           </div>
           <div class="eight-leds" id="eightLeds">
             <div class="beat-led active-one">1</div>
@@ -881,15 +1084,15 @@
           </div>
         </div>
 
-        <div class="hud-card">
-          <span id="hudStateBadge" style="font-size:0.76rem;font-weight:800;color:#10b981;">● EM FORMAÇÃO (HOLD)</span>
-          <button type="button" id="btnHudStampNext" class="chip active" style="pointer-events:auto;" onclick="stampNextCueOrCreate()" title="Ajusta a marca seguinte para o momento atual ou cria uma nova se não houver (Atalho: Tecla A)">⚡ Marcar Próxima (A)</button>
+        <div class="hud-card hud-actions-card">
+          <span id="hudStateBadge" style="font-size:0.72rem;font-weight:800;color:#10b981;white-space:nowrap;flex-shrink:0;">● EM FORMAÇÃO</span>
+          <button type="button" id="btnHudStampNext" class="chip active" style="pointer-events:auto;" onclick="stampNextCueOrCreate()" title="Ajusta a chegada da marca seguinte para o momento atual ou cria uma nova (Atalho: Tecla A)">⚡ Chegada Cue (A)</button>
           <button type="button" id="btnHudAudienceSide" class="chip" style="pointer-events:auto;" onclick="cycleAudienceSide()" title="Girar Posição da Plateia: Baixo / Esquerda / Cima / Direita (Atalho: Tecla P)">🔄 Plateia: ⬇️ Baixo (P)</button>
           <button type="button" id="btnHudAvatarStyle" class="chip active" style="pointer-events:auto;" onclick="toggleAvatarStyle()" title="Alternar entre Bonecos Realistas e Estilizados (Atalho: Tecla B)">🕺 Boneco: Realista (B)</button>
           <button type="button" id="btnAntiCollision" class="chip active" style="pointer-events:auto;" onclick="toggleAntiCollision()" title="Impede que dançarinos se sobreponham ou esbarrem">🛡️ Anti-Esbarrão: ON</button>
           <button type="button" class="chip" style="pointer-events:auto;" onclick="autoCurveAllTransitions(true)" title="Ajusta automaticamente as curvas Bézier para desviar cruzamentos (Atalho: Tecla C)">✨ Auto-Curvar</button>
-          <button type="button" class="chip" style="pointer-events:auto;" onclick="togglePlay()" title="Play / Pause (Espaço ou K)">⏯ Play/Pause</button>
-          <button type="button" id="btnStageFullscreen" class="chip" style="pointer-events:auto;border-color:var(--accent-amber);color:var(--accent-amber);" onclick="toggleStageFullscreen()" title="Expandir Palco em Tela Cheia (Tecla F)">⛶ Tela Cheia Palco</button>
+          <button type="button" class="chip" style="pointer-events:auto;" onclick="togglePlay()" title="Play / Pause (Espaço ou K)">⏯ Play</button>
+          <button type="button" id="btnStageFullscreen" class="chip" style="pointer-events:auto;border-color:var(--accent-amber);color:var(--accent-amber);" onclick="toggleStageFullscreen()" title="Expandir Palco em Tela Cheia (Tecla F)">⛶ Tela Cheia</button>
         </div>
       </div>
 
@@ -924,14 +1127,14 @@
 
       <!-- Bottom HUD: Step Banner & 3D Camera Presets -->
       <div class="stage-hud-bottom">
-        <div id="camBar" class="cam-bar" style="flex-wrap:wrap;justify-content:center;">
-          <button type="button" class="chip active" data-cam="audience" onclick="set3DCamera('audience')">🎭 Plateia (Frontal)</button>
-          <button type="button" class="chip" data-cam="choreo" onclick="set3DCamera('choreo')">🎬 Coreógrafo (Diagonal)</button>
-          <button type="button" class="chip" data-cam="dancer" onclick="set3DCamera('dancer')">🪞 Visão do Bailarino (De Costas)</button>
-          <button type="button" class="chip" data-cam="side" onclick="set3DCamera('side')">📐 Lateral (Coxia)</button>
-          <button type="button" class="chip" data-cam="top" onclick="set3DCamera('top')">⬆️ Topo 3D</button>
-          <button type="button" class="chip" data-cam="pov" onclick="enterDancerPOV(selectedDancerId, true)" title="Câmera nos olhos do dançarino selecionado — clique novamente para voltar à câmera normal (Atalho: Tecla G)">👀 Olhos do Dançarino (G)</button>
-          <span id="povDancerChips" style="display:inline-flex;gap:4px;align-items:center;"></span>
+        <div id="camBar" class="cam-bar">
+          <button type="button" class="chip active" data-cam="audience" onclick="set3DCamera('audience')">🎭 Plateia</button>
+          <button type="button" class="chip" data-cam="choreo" onclick="set3DCamera('choreo')">🎬 Coreógrafo</button>
+          <button type="button" class="chip" data-cam="dancer" onclick="set3DCamera('dancer')">🪞 Bailarino</button>
+          <button type="button" class="chip" data-cam="side" onclick="set3DCamera('side')">📐 Lateral</button>
+          <button type="button" class="chip" data-cam="top" onclick="set3DCamera('top')">⬆️ Topo</button>
+          <button type="button" class="chip" data-cam="pov" onclick="enterDancerPOV(selectedDancerId, true)" title="Câmera nos olhos do dançarino selecionado — clique novamente para voltar à câmera normal (Atalho: Tecla G)">👀 1ª Pessoa (G)</button>
+          <span id="povDancerChips" style="display:inline-flex;gap:3px;align-items:center;flex-shrink:0;"></span>
         </div>
         <div class="step-banner">
           <span style="color:var(--accent-amber);" id="bannerCueName">Cue 1 — Abertura</span>
@@ -942,7 +1145,11 @@
     </main>
 
     <!-- RIGHT PANEL: CUES (FORMATIONS) & STEP EDITOR -->
-    <aside class="panel panel-right">
+    <aside id="rightPanel" class="panel panel-right">
+      <div class="drawer-mobile-header">
+        <strong style="font-size:0.84rem;color:var(--accent-amber);">🎬 Marcas, Passos &amp; BPM</strong>
+        <button type="button" class="btn" onclick="closeMobileDrawers()">✕ Fechar</button>
+      </div>
       <div class="section-box">
         <div class="section-title">
           <span>🎬 Marcas / Formações (Cues)</span>
@@ -5961,6 +6168,77 @@
       document.documentElement.classList.toggle('light');
     }
 
+    function syncPanelToggleButtons() {
+      const btnL = document.getElementById('btnToggleLeftPanel');
+      const btnR = document.getElementById('btnToggleRightPanel');
+      const leftPanel = document.getElementById('leftPanel');
+      const rightPanel = document.getElementById('rightPanel');
+      const isDrawerMode = window.innerWidth <= 1180;
+      if (btnL) {
+        btnL.classList.toggle('active', isDrawerMode
+          ? Boolean(leftPanel && leftPanel.classList.contains('drawer-open'))
+          : !document.body.classList.contains('left-collapsed'));
+      }
+      if (btnR) {
+        btnR.classList.toggle('active', isDrawerMode
+          ? Boolean(rightPanel && rightPanel.classList.contains('drawer-open'))
+          : !document.body.classList.contains('right-collapsed'));
+      }
+    }
+
+    function closeMobileDrawers() {
+      const leftPanel = document.getElementById('leftPanel');
+      const rightPanel = document.getElementById('rightPanel');
+      const backdrop = document.getElementById('drawerBackdrop');
+      if (leftPanel) leftPanel.classList.remove('drawer-open');
+      if (rightPanel) rightPanel.classList.remove('drawer-open');
+      if (backdrop) backdrop.classList.remove('open');
+      syncPanelToggleButtons();
+    }
+
+    function toggleSidePanel(side) {
+      const isDrawerMode = window.innerWidth <= 1180;
+      const leftPanel = document.getElementById('leftPanel');
+      const rightPanel = document.getElementById('rightPanel');
+      const backdrop = document.getElementById('drawerBackdrop');
+
+      if (isDrawerMode) {
+        const target = side === 'left' ? leftPanel : rightPanel;
+        const other = side === 'left' ? rightPanel : leftPanel;
+        const willOpen = target ? !target.classList.contains('drawer-open') : false;
+        if (other) other.classList.remove('drawer-open');
+        if (target) target.classList.toggle('drawer-open', willOpen);
+        if (backdrop) backdrop.classList.toggle('open', willOpen);
+      } else {
+        if (side === 'left') {
+          document.body.classList.toggle('left-collapsed');
+        } else {
+          document.body.classList.toggle('right-collapsed');
+        }
+      }
+      syncPanelToggleButtons();
+      setTimeout(() => {
+        if (viewMode === '2d') drawStage2D();
+        else updateAndRender3D();
+        drawTimeline();
+      }, 50);
+    }
+
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 1180) {
+        const leftPanel = document.getElementById('leftPanel');
+        const rightPanel = document.getElementById('rightPanel');
+        const backdrop = document.getElementById('drawerBackdrop');
+        if (leftPanel) leftPanel.classList.remove('drawer-open');
+        if (rightPanel) rightPanel.classList.remove('drawer-open');
+        if (backdrop) backdrop.classList.remove('open');
+      }
+      syncPanelToggleButtons();
+      if (viewMode === '2d') drawStage2D();
+      else updateAndRender3D();
+      drawTimeline();
+    });
+
     function toggleShortcutsModal(forceState) {
       const el = document.getElementById('shortcutsModalBackdrop');
       if (!el) return;
@@ -6197,6 +6475,7 @@
       if (e.code === 'Escape') {
         toggleShortcutsModal(false);
         toggleNewProjectModal(false);
+        closeMobileDrawers();
         setEditing3DDancer(null);
         return;
       }
@@ -6298,6 +6577,7 @@
     loadDemoChoreography();
     setViewMode('3d');
     loadDefaultDemoAudio(false);
+    syncPanelToggleButtons();
     requestAnimationFrame(mainLoop);
   </script>
 </body>
